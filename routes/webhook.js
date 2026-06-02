@@ -114,16 +114,26 @@ router.post('/', async (req, res) => {
     }
 
     // ── QUOTE FORM ────────────────────────────────────────────────
-    if (lead.currentStage === 'quote_form') {
-      if (msgType === 'interactive') {
-        const listId = message.interactive?.list_reply?.id;
-        if (listId) await handleQuoteFormAnswer(phone, listId, true);
-      } else if (msgType === 'text') {
-        const text = message.text?.body?.trim();
-        if (text) await handleQuoteFormAnswer(phone, text, false);
-      }
-      return;
+   if (lead.currentStage === 'quote_form') {
+  if (msgType === 'interactive') {
+    const listId = message.interactive?.list_reply?.id;
+    if (listId) await handleQuoteFormAnswer(phone, listId, true);
+  } else if (msgType === 'text') {
+    const text = message.text?.body?.trim();
+    if (!text) return;
+    // pincode step-ல மட்டும் handleQuoteFormAnswer
+    if (lead.quoteStep === 'pincode') {
+      await handleQuoteFormAnswer(phone, text, false);
+    } else {
+      // மற்ற text-க்கு AI reply
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
     }
+  }
+  return;
+}
 
     // ── CATALOG BROWSE ────────────────────────────────────────────
     if (lead.currentStage === 'catalog_browse') {
