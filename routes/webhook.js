@@ -125,9 +125,10 @@ router.post('/', async (req, res) => {
     if (lead.quoteStep === 'pincode') {
       await handleQuoteFormAnswer(phone, text, false);
     } else {
-      // மற்ற text-க்கு AI reply
+      // Random text → AI answer with quote context
+      const contextMsg = `[Note: Customer is currently filling a quote form for "${lead.productType}". Answer their product question briefly, then politely remind them to continue selecting from the menu options above to complete their quote.]`;
       lead.messages.push({ role: 'user', content: text });
-      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      const aiReply = await handleAIMessage(phone, text, lead.messages, contextMsg);
       if (aiReply) lead.messages.push(aiReply);
       await lead.save();
     }
