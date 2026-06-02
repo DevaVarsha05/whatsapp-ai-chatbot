@@ -26,30 +26,29 @@ const handleGreeting = async (phone, name) => {
   );
 };
 
-// Stage 1: User clicked a button → save intent → signal next action
 const handleIntentSelection = async (phone, buttonId) => {
   let lead = await Lead.findOne({ phone });
   if (!lead) return;
-
+ 
   lead.intent = buttonId;
-
+ 
   if (buttonId === 'quote_request') {
     lead.currentStage = 'product_routing';
     await lead.save();
     return 'go_to_stage2';
   }
-
+ 
   if (buttonId === 'product_catalog') {
     lead.currentStage = 'greeting';
     await lead.save();
     return 'send_catalog';
   }
-
+ 
   if (buttonId === 'track_order') {
     lead.currentStage = 'greeting';
     await lead.save();
     return 'send_tracking';
   }
 };
-
+ 
 module.exports = { handleGreeting, handleIntentSelection };

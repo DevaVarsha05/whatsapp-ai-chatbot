@@ -10,10 +10,10 @@ const {
   handleCatalogProductSelect,
   handleCatalogAction,
   handleCatalogFormAnswer,
-} = require('../handlers/Stagecatalog.js');
+} = require('../handlers/stageCatalog');
 const { sendText } = require('../utils/whatsapp');
- 
-// ── GET: Meta webhook verification ───────────────────────────────
+const { handleAIMessage } = require('../handlers/aiassisatnt');
+// ── GET: Webhook Verification ─────────────────────────────────────
 router.get('/', (req, res) => {
   const mode      = req.query['hub.mode'];
   const token     = req.query['hub.verify_token'];
@@ -30,7 +30,7 @@ router.get('/', (req, res) => {
   res.sendStatus(403);
 });
  
-// ── POST: Receive WhatsApp messages ──────────────────────────────
+// ── POST: Receive Messages ────────────────────────────────────────
 router.post('/', async (req, res) => {
   res.sendStatus(200);
  
@@ -56,24 +56,44 @@ router.post('/', async (req, res) => {
         message.text?.body?.trim().toLowerCase()
       );
  
+    // ── New or Greet ──────────────────────────────────────────────
     if (!lead || isGreetWord) {
       await handleGreeting(phone, name);
       return;
     }
  
-    // ── STAGE 1: greeting buttons ─────────────────────────────────
+    // ── STAGE 1: Greeting Buttons ─────────────────────────────────
     if (lead.currentStage === 'greeting') {
-      if (msgType !== 'interactive') {
-        await handleGreeting(phone, name);
-        return;
-      }
-      const buttonId = message.interactive?.button_reply?.id;
-      if (!buttonId) return;
+  // 1️⃣ பயனர் Text மெசேஜ் அனுப்பினால்
+  if (msgType !== 'interactive') {
+    const text = message.text?.body?.trim();
+    if (text) {
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
+    }
+    
+    // ✅ உங்கள் பழைய handleGreeting இங்கேயும் வேலை செய்யும்
+    await handleGreeting(phone, name);
+    return;
+  }
+
+  // 2️⃣ பயனர் Button கிளிக் செய்தால்
+  const buttonId = message.interactive?.button_reply?.id;
+  if (!buttonId) return;
+
+  // Button கிளிக் செய்த பிறகு எப்போதும் போல இயங்கும் கோட்...
+
  
       const result = await handleIntentSelection(phone, buttonId);
       if (result === 'go_to_stage2')  await sendProductMenu(phone);
-      if (result === 'send_tracking') await sendText(phone, '🚚 Please provide your Order ID to track.');
- 
+      if (result === 'send_tracking') {
+     lead = await Lead.findOne({ phone });
+     lead.currentStage = 'tracking';
+     await lead.save();
+     await sendText(phone, '🚚 Please provide your Order ID to track.');
+}
       if (result === 'send_catalog') {
         lead = await Lead.findOne({ phone });
         lead.currentStage = 'catalog_browse';
@@ -83,7 +103,31 @@ router.post('/', async (req, res) => {
       return;
     }
  
-    // ── CATALOG BROWSE: product list selection ────────────────────
+    // ── STAGE 2: Product Selection ────────────────────────────────
+    if (lead.currentStage === 'product_routing') {
+      if (msgType !== 'interactive') {
+        await sendProductMenu(phone);
+        return;
+      }
+      const listId = message.interactive?.list_reply?.id;
+      if (!listId) return;
+      await handleProductSelection(phone, listId);
+      return;
+    }
+ 
+    // ── STAGE 3: Quote Form ───────────────────────────────────────
+    if (lead.currentStage === 'quote_form') {
+      if (msgType === 'interactive') {
+        const listId = message.interactive?.list_reply?.id;
+        if (listId) await handleQuoteFormAnswer(phone, listId, true);
+      } else if (msgType === 'text') {
+        const text = message.text?.body?.trim();
+        if (text) await handleQuoteFormAnswer(phone, text, false);
+      }
+      return;
+    }
+ 
+    // ── CATALOG BROWSE ────────────────────────────────────────────
     if (lead.currentStage === 'catalog_browse') {
       if (msgType !== 'interactive') {
         await sendCatalogMenu(phone);
@@ -94,18 +138,15 @@ router.post('/', async (req, res) => {
       return;
     }
  
-    // ── CATALOG ACTION: quote/back/done buttons ───────────────────
+    // ── CATALOG ACTION ────────────────────────────────────────────
     if (lead.currentStage === 'catalog_action') {
-      if (msgType !== 'interactive') {
-        await sendText(phone, 'Please tap one of the buttons above.');
-        return;
-      }
+      if (msgType !== 'interactive') return;
       const buttonId = message.interactive?.button_reply?.id;
       if (buttonId) await handleCatalogAction(phone, buttonId);
       return;
     }
  
-    // ── CATALOG FORM: quote form answers ──────────────────────────
+    // ── CATALOG FORM ──────────────────────────────────────────────
     if (lead.currentStage === 'catalog_form') {
       if (msgType === 'interactive') {
         const listId = message.interactive?.list_reply?.id;
@@ -117,38 +158,16 @@ router.post('/', async (req, res) => {
       return;
     }
  
-    // ── STAGE 2: product routing ──────────────────────────────────
-    if (lead.currentStage === 'product_routing') {
-      if (msgType !== 'interactive') {
-        await sendProductMenu(phone);
-        return;
-      }
-      const listId = message.interactive?.list_reply?.id;
-      if (!listId) return;
-      const result = await handleProductSelection(phone, listId);
-      if (result === 'go_to_stage3') await startQuoteForm(phone);
-      return;
-    }
- 
-    // ── STAGE 3: quote form ───────────────────────────────────────
-    if (lead.currentStage === 'quote_form') {
-      if (msgType === 'interactive') {
-        const listId = message.interactive?.list_reply?.id;
-        if (listId) await handleQuoteFormAnswer(phone, listId);
-      } else if (msgType === 'text') {
-        const text = message.text?.body?.trim();
-        if (text) await handleQuoteFormAnswer(phone, text);
-      }
-      return;
-    }
- 
     // ── COMPLETED ─────────────────────────────────────────────────
     if (lead.currentStage === 'completed') {
       if (msgType === 'text' && message.text?.body?.trim().toLowerCase() === 'yes') {
         lead.currentStage    = 'greeting';
         lead.intent          = null;
         lead.productType     = null;
-        lead.quoteFormStep   = 0;
+        lead.quoteStep       = null;
+        lead.selectedBrand   = null;
+        lead.selectedThickness = null;
+        lead.deliveryPincode = null;
         lead.catalogFormStep = 0;
         lead.catalogProduct  = null;
         await lead.save();
@@ -158,11 +177,24 @@ router.post('/', async (req, res) => {
           `Hello ${name}! 👋 Your quote is already submitted.\nWould you like to request another quote? Reply *Yes* to start again.`
         );
       }
+  return;
     }
- 
+
+    // ── AI ASSISTANT: All other unhandled text ────────────────────
+    if (msgType === 'text') {
+      const text = message.text?.body?.trim();
+      if (!text) return;
+
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
+      return;
+    }
+
   } catch (err) {
     console.error('❌ Webhook error:', err.message);
   }
 });
- 
+
 module.exports = router;

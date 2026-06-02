@@ -1,93 +1,7 @@
 const Lead = require('../models/lead');
-const { sendDropdown, sendText, sendListMenu, sendButtons } = require('../utils/whatsapp');
+const { sendText, sendListMenu, sendButtons } = require('../utils/whatsapp');
  
-// ── Catalog Form Steps (same as quote but for browsing) ───────────
-const CATALOG_STEPS = [
-  {
-    type: 'dropdown',
-    key: 'catalogGrade',
-    label: 'Steel Grade',
-    options: [
-      { id: 'Fe500',  label: 'Fe500' },
-      { id: 'Fe500D', label: 'Fe500D' },
-      { id: 'Fe550',  label: 'Fe550' },
-      { id: 'Fe550D', label: 'Fe550D' },
-    ],
-  },
-  {
-    type: 'dropdown',
-    key: 'catalogDiameter',
-    label: 'Diameter / Thickness',
-    options: [
-      { id: '8mm',  label: '8mm' },
-      { id: '10mm', label: '10mm' },
-      { id: '12mm', label: '12mm' },
-      { id: '16mm', label: '16mm' },
-      { id: '20mm', label: '20mm' },
-      { id: '25mm', label: '25mm' },
-      { id: '32mm', label: '32mm' },
-    ],
-  },
-  {
-    type: 'text',
-    key: 'catalogQuantity',
-    prompt: '📦 Enter the *required quantity* in Tonnes:\n(e.g., 25)',
-  },
-  {
-    type: 'dropdown',
-    key: 'catalogBrand',
-    label: 'Brand Preference',
-    options: [
-      { id: 'Primary Brand (Tata Tiscon / JSW)', label: 'Primary (Tata / JSW)' },
-      { id: 'Secondary Brand',                   label: 'Secondary Brand' },
-      { id: 'No Preference',                     label: 'No Preference' },
-    ],
-  },
-  {
-    type: 'text',
-    key: 'catalogPincode',
-    prompt: '📍 Enter your *Delivery PINCODE*:\n(6-digit pincode)',
-  },
-  {
-    type: 'text',
-    key: 'catalogCity',
-    prompt: '🏙️ Enter your *Site Location / City*:\n(e.g., Dindigul)',
-  },
-  {
-    type: 'dropdown',
-    key: 'catalogTimeline',
-    label: 'Delivery Timeline',
-    options: [
-      { id: 'Immediate (1-3 days)', label: 'Immediate (1-3 days)' },
-      { id: 'This Week',            label: 'This Week' },
-      { id: 'Next Month',           label: 'Next Month' },
-      { id: 'Just Inquiring',       label: 'Just Inquiring' },
-    ],
-  },
-  {
-    type: 'text',
-    key: 'catalogContact',
-    prompt: '👤 Enter *Full Name / Contact Person*:',
-  },
-  {
-    type: 'text',
-    key: 'catalogCompany',
-    prompt: '🏢 Enter your *Company / Project Name*:',
-  },
-  {
-    type: 'dropdown',
-    key: 'catalogProjectType',
-    label: 'Project Type',
-    options: [
-      { id: 'Residential',    label: 'Residential' },
-      { id: 'Commercial',     label: 'Commercial' },
-      { id: 'Infrastructure', label: 'Infrastructure' },
-      { id: 'Dealership',     label: 'Dealership' },
-    ],
-  },
-];
- 
-// Valid pincodes — same as stage3
+
 const VALID_PINCODES = [
   '624001',
   '624002',
@@ -105,7 +19,18 @@ const PRODUCT_CATEGORIES = [
   { id: 'fibre_boards',     title: 'Fibre Cement Boards',   description: 'Everest 6mm, 8mm, 10mm' },
   { id: 'accessories',      title: 'Accessories',           description: 'TATA Screws, Louvers...' },
 ];
- 
+ const CATALOG_STEPS = [
+  { key: 'catalogGrade',       label: 'Steel Grade',      type: 'text',     prompt: '📐 Enter *Steel Grade* (e.g., Fe500, Fe550D):' },
+  { key: 'catalogDiameter',    label: 'Diameter',         type: 'text',     prompt: '📏 Enter *Diameter* (e.g., 8mm, 12mm):' },
+  { key: 'catalogQuantity',    label: 'Quantity (Tonnes)', type: 'text',    prompt: '⚖️ Enter *Quantity* in Tonnes (e.g., 25):' },
+  { key: 'catalogBrand',       label: 'Brand',            type: 'text',     prompt: '🏷️ Enter *Brand* name:' },
+  { key: 'catalogPincode',     label: 'Pincode',          type: 'text',     prompt: '📍 Enter your *Delivery Pincode* (6 digits):' },
+  { key: 'catalogCity',        label: 'City',             type: 'text',     prompt: '🏙️ Enter your *City*:' },
+  { key: 'catalogTimeline',    label: 'Timeline',         type: 'text',     prompt: '📅 Enter your *Required Timeline* (e.g., 1 week):' },
+  { key: 'catalogContact',     label: 'Contact Number',   type: 'text',     prompt: '📞 Enter your *Contact Number*:' },
+  { key: 'catalogCompany',     label: 'Company Name',     type: 'text',     prompt: '🏢 Enter your *Company Name* (or type NA):' },
+  { key: 'catalogProjectType', label: 'Project Type',     type: 'text',     prompt: '🏗️ Enter *Project Type* (e.g., Residential, Commercial):' },
+];
 // ── Step 1: Show product category list ───────────────────────────
 const sendCatalogMenu = async (phone) => {
   await sendListMenu(
