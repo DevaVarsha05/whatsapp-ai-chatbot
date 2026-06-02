@@ -74,8 +74,7 @@ router.post('/', async (req, res) => {
       await lead.save();
     }
     
-    // ✅ உங்கள் பழைய handleGreeting இங்கேயும் வேலை செய்யும்
-    await handleGreeting(phone, name);
+   
     return;
   }
 
@@ -194,6 +193,7 @@ router.post('/', async (req, res) => {
 
   } catch (err) {
     console.error('❌ Webhook error:', err.message);
+     console.error('❌ Error details:', err.response?.data);
   }
 });
 
