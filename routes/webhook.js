@@ -10,7 +10,7 @@ const {
   handleCatalogProductSelect,
   handleCatalogAction,
   handleCatalogFormAnswer,
-} = require('../handlers/stageCatalog');
+} = require('../handlers/stagecatalogtemp');
 const { sendText } = require('../utils/whatsapp');
 const { handleAIMessage } = require('../handlers/aiassisatnt');
 // ── GET: Webhook Verification ─────────────────────────────────────
