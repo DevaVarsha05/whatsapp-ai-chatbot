@@ -190,6 +190,8 @@ router.post('/', async (req, res) => {
     console.error('❌ Webhook error:', err.message);
     console.error('❌ Error details:', err.response?.data);
   }
+
+  console.log(`📌 Current stage: ${lead?.currentStage}`);
 });
 
 module.exports = router;
