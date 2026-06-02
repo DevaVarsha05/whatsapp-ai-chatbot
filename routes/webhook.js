@@ -49,9 +49,9 @@ router.post('/', async (req, res) => {
     const msgType = message.type;
 
     console.log(`📨 Message from ${phone} (${name}): type=${msgType}`);
-
+    
     let lead = await Lead.findOne({ phone });
-
+    console.log(`📌 Current stage: ${lead?.currentStage}`);
     const isGreetWord =
       msgType === 'text' &&
       ['hi', 'hello', 'hey', 'menu', 'start',
@@ -191,7 +191,7 @@ router.post('/', async (req, res) => {
     console.error('❌ Error details:', err.response?.data);
   }
 
-  console.log(`📌 Current stage: ${lead?.currentStage}`);
+  
 });
 
 module.exports = router;
