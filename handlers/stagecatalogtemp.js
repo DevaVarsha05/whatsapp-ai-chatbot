@@ -1,6 +1,6 @@
 const Lead = require('../models/lead');
 const { sendText, sendListMenu, sendButtons } = require('../utils/whatsapp');
- 
+const { sendMainCategoryMenu } = require('./stage2');
 
 const VALID_PINCODES = [
   '624001',
@@ -140,11 +140,12 @@ const handleCatalogAction = async (phone, buttonId) => {
   }
  
   if (buttonId === 'catalog_done') {
-    lead.currentStage = 'greeting';
-    await lead.save();
-    await sendText(phone, '✅ Thank you for browsing our catalog!\nType *hi* anytime to start again.');
-    return;
-  }
+  lead.currentStage = 'main_category';
+  await lead.save();
+  await sendText(phone, '✅ Thank you for browsing our catalog!');
+  await sendMainCategoryMenu(phone);
+  return;
+}
  
   if (buttonId.startsWith('catalog_quote_')) {
     // Start catalog quote form

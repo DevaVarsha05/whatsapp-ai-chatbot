@@ -1,6 +1,6 @@
 const Lead = require('../models/lead');
 const { sendText } = require('../utils/whatsapp');
-const { sendThicknessMenu, PRODUCTS } = require('./stage2');
+const { sendThicknessMenu, sendSheetTypeMenu, PRODUCTS } = require('./stage2');
 
 // Valid Pincodes
 const VALID_PINCODES = [
@@ -11,34 +11,44 @@ const VALID_PINCODES = [
   '624005',
 ];
 
-// ── Start Quote Form ──────────────────────────────────────────────
-const startQuoteForm = async (phone) => {
-  const lead = await Lead.findOne({ phone });
-  if (!lead) return;
-
-  lead.quoteFormStep = 0;
-  lead.currentStage  = 'quote_form';
-  lead.quoteStep     = 'brand';
-  await lead.save();
-};
-
 // ── Handle Brand Selection ────────────────────────────────────────
 const handleBrandSelection = async (phone, brandId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
   lead.selectedBrand = brandId;
-  lead.quoteStep     = 'thickness';
+
+  // Roofing Sheets → ask Sheet Type after brand
+  if (lead.productType === 'roofing_sheets') {
+    lead.quoteStep = 'sheet_type';
+    await lead.save();
+    await sendSheetTypeMenu(phone);
+    return;
+  }
+
+  lead.quoteStep = 'thickness';
   await lead.save();
 
   const result = await sendThicknessMenu(phone, lead.productType);
 
-  // Cement has no thickness — go straight to pincode
+  // Cement has no thickness → go straight to pincode
   if (result === 'skip_thickness') {
     lead.quoteStep = 'pincode';
     await lead.save();
     await sendText(phone, '📍 Enter your *Delivery PINCODE*:\n(6-digit pincode)');
   }
+};
+
+// ── Handle Sheet Type Selection (only for roofing_sheets) ─────────
+const handleSheetTypeSelection = async (phone, sheetTypeId) => {
+  const lead = await Lead.findOne({ phone });
+  if (!lead) return;
+
+  lead.selectedSheetType = sheetTypeId;
+  lead.quoteStep         = 'thickness';
+  await lead.save();
+
+  await sendThicknessMenu(phone, 'roofing_sheets');
 };
 
 // ── Handle Thickness Selection ────────────────────────────────────
@@ -86,17 +96,24 @@ const handlePincode = async (phone, pincode) => {
 // ── Quote Summary ─────────────────────────────────────────────────
 const sendQuoteSummary = async (phone, lead) => {
   const product   = PRODUCTS[lead.productType];
-  const brandName = product?.brands.find(b => b.id === lead.selectedBrand)?.title
-  const sizeName  = product?.thickness.find(t => t.id === lead.selectedThickness)?.title
+  const brandName = product?.brands.find(b => b.id === lead.selectedBrand)?.title || '-';
+  const sizeName  = product?.thickness.find(t => t.id === lead.selectedThickness)?.title || '-';
+
+  // Sheet type (only for roofing_sheets)
+  let sheetTypeLine = '';
+  if (lead.productType === 'roofing_sheets' && lead.selectedSheetType) {
+    const sheetType = product?.sheetTypes?.find(s => s.id === lead.selectedSheetType)?.title || '-';
+    sheetTypeLine = `• Sheet Type: ${sheetType}\n`;
+  }
 
   const summary = `
 ✅ *Thank you! Your quote request has been received.*
 
 📋 *Quote Summary:*
-• Product  : ${product?.title || lead.productType}
-• Brand    : ${brandName}
-• Size     : ${sizeName}
-• Pincode  : ${lead.deliveryPincode}
+• Product   : ${product?.title || lead.productType}
+• Brand     : ${brandName}
+${sheetTypeLine}• Size      : ${sizeName}
+• Pincode   : ${lead.deliveryPincode}
 
 Our team will call you within *2 business hours*. 🤝
   `.trim();
@@ -113,6 +130,8 @@ const handleQuoteFormAnswer = async (phone, answer, isInteractive = false) => {
 
   if (step === 'brand' && isInteractive) {
     await handleBrandSelection(phone, answer);
+  } else if (step === 'sheet_type' && isInteractive) {
+    await handleSheetTypeSelection(phone, answer);
   } else if (step === 'thickness' && isInteractive) {
     await handleThicknessSelection(phone, answer);
   } else if (step === 'pincode' && !isInteractive) {
@@ -120,4 +139,4 @@ const handleQuoteFormAnswer = async (phone, answer, isInteractive = false) => {
   }
 };
 
-module.exports = { startQuoteForm, handleQuoteFormAnswer };
+module.exports = { handleQuoteFormAnswer, sendQuoteSummary };

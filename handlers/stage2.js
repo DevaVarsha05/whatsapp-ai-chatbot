@@ -1,7 +1,39 @@
 const Lead = require('../models/lead');
-const { sendListMenu } = require('../utils/whatsapp');
+const { sendListMenu, sendButtons } = require('../utils/whatsapp');
 
+// ─────────────────────────────────────────────────────────────────
+// PRODUCT HIERARCHY
+// ─────────────────────────────────────────────────────────────────
+
+const MAIN_CATEGORIES = [
+  { id: 'roofing_products',       title: '🏠 Roofing Products',         description: 'Sheets, Accessories, Fibre Boards' },
+  { id: 'structural_fastening',   title: '🔩 Structural & Fastening',   description: 'Steel, Pipes, Cement, Fasteners' },
+  { id: 'use_cases',              title: '🏗️ Use Cases',                description: 'Residential, Commercial, Industrial' },
+];
+
+// ── Sub-categories per main category ─────────────────────────────
+const SUB_CATEGORIES = {
+  roofing_products: [
+    { id: 'roofing_sheets',   title: '1.1 Roofing Sheets',        description: 'JSW Everglow, Colouron+, Pragati+...' },
+    { id: 'roofing_acc',      title: '1.2 Roofing Accessories',   description: 'L Corner, Gutter, Ridge...' },
+    { id: 'fibre_boards',     title: '1.3 Fibre Cement Boards',   description: 'Everest Standard, HD Board' },
+  ],
+  structural_fastening: [
+    { id: 'structural_steel', title: '2.1 Structural Steel',      description: 'TMT Bars - ARS550D' },
+    { id: 'pipes',            title: '2.2 Pipes',                 description: 'MS Pipes, GP Pipes' },
+    { id: 'cement',           title: '2.3 Cement',                description: 'Dalmia Cement' },
+    { id: 'fasteners',        title: '2.4 Fasteners & Fittings',  description: 'TATA Screws, Louvers, Thoovanam...' },
+  ],
+  use_cases: [
+    { id: 'residential',      title: '3.1 Residential',           description: 'House Terraces, Balcony, Frontage' },
+    { id: 'commercial',       title: '3.2 Commercial',            description: 'Shop Extensions, Transit Shelters...' },
+    { id: 'industrial',       title: '3.3 Industrial / Agricultural', description: 'Car Parking, Cattle Shed, Godown' },
+  ],
+};
+
+// ── Product details (brands + thickness) per sub-category ────────
 const PRODUCTS = {
+  // 1.1 Roofing Sheets
   roofing_sheets: {
     title: 'Roofing Sheets',
     brands: [
@@ -12,18 +44,7 @@ const PRODUCTS = {
       { id: 'jsw_vishwas',    title: 'JSW Vishwas+' },
       { id: 'jsw_colorvista', title: 'JSW ColorVista' },
     ],
-    thickness: [
-      { id: '0.35mm', title: '0.35mm' },
-      { id: '0.40mm', title: '0.40mm' },
-      { id: '0.45mm', title: '0.45mm' },
-      { id: '0.47mm', title: '0.47mm' },
-      { id: '0.50mm', title: '0.50mm' },
-      { id: '0.60mm', title: '0.60mm' },
-    ],
-  },
-  sheet_type: {
-    title: 'Sheet Type',
-    brands: [
+    sheetTypes: [
       { id: 'profile_sheet',       title: 'Profile Sheet' },
       { id: 'crimp_sheet',         title: 'Crimp Sheet' },
       { id: 'arch_sheet',          title: 'Arch Sheet' },
@@ -39,6 +60,8 @@ const PRODUCTS = {
       { id: '0.60mm', title: '0.60mm' },
     ],
   },
+
+  // 1.2 Roofing Accessories
   roofing_acc: {
     title: 'Roofing Accessories',
     brands: [
@@ -58,8 +81,24 @@ const PRODUCTS = {
       { id: '0.60mm', title: '0.60mm' },
     ],
   },
-  tmt_bars: {
-    title: 'TMT Bars',
+
+  // 1.3 Fibre Cement Boards
+  fibre_boards: {
+    title: 'Fibre Cement Boards',
+    brands: [
+      { id: 'everest_standard', title: 'Everest Standard Board' },
+      { id: 'everest_hd',       title: 'Everest HD Board' },
+    ],
+    thickness: [
+      { id: '6mm',  title: '6mm' },
+      { id: '8mm',  title: '8mm' },
+      { id: '10mm', title: '10mm' },
+    ],
+  },
+
+  // 2.1 Structural Steel
+  structural_steel: {
+    title: 'Structural Steel (TMT Bars)',
     brands: [
       { id: 'ars550d', title: 'ARS550D TMT Bars' },
     ],
@@ -71,14 +110,9 @@ const PRODUCTS = {
       { id: '20mm', title: '20mm' },
     ],
   },
-  cement: {
-    title: 'Cement',
-    brands: [
-      { id: 'dalmia', title: 'Dalmia' },
-    ],
-    thickness: [],
-  },
-  steel_pipes: {
+
+  // 2.2 Pipes
+  pipes: {
     title: 'Steel Pipes',
     brands: [
       { id: 'ms_pipes', title: 'MS Pipes' },
@@ -94,20 +128,19 @@ const PRODUCTS = {
       { id: '4mm',   title: '4mm' },
     ],
   },
-  fibre_boards: {
-    title: 'Fibre Cement Boards',
+
+  // 2.3 Cement
+  cement: {
+    title: 'Cement',
     brands: [
-      { id: 'everest_standard', title: 'Everest Standard Board' },
-      { id: 'everest_hd',       title: 'Everest HD Board' },
+      { id: 'dalmia', title: 'Dalmia Cement' },
     ],
-    thickness: [
-      { id: '6mm',  title: '6mm' },
-      { id: '8mm',  title: '8mm' },
-      { id: '10mm', title: '10mm' },
-    ],
+    thickness: [], // No thickness for cement
   },
-  accessories: {
-    title: 'Accessories',
+
+  // 2.4 Fasteners & Fittings
+  fasteners: {
+    title: 'Fasteners & Fittings',
     brands: [
       { id: 'tata_screws',      title: 'TATA Screws' },
       { id: 'louvers',          title: 'Louvers' },
@@ -125,31 +158,60 @@ const PRODUCTS = {
   },
 };
 
-// ── Send Product Category List ────────────────────────────────────
-const sendProductMenu = async (phone) => {
+// ── Use Case Details (no brand/thickness — info only) ─────────────
+const USE_CASES = {
+  residential: {
+    title: 'Residential',
+    items: ['House Terraces', 'Balcony & Window Extensions', 'Frontage / Backyard Area'],
+  },
+  commercial: {
+    title: 'Commercial',
+    items: ['Shop Extensions', 'Transit Shelters', 'Security Cabins', 'Walkways / Corridors'],
+  },
+  industrial: {
+    title: 'Industrial / Agricultural',
+    items: ['Car Parking / Vehicle Shed', 'Cattle Shed & Poultry Farms', 'Godown'],
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────
+// SEND FUNCTIONS
+// ─────────────────────────────────────────────────────────────────
+
+// Step 1: Main Category Menu (Roofing / Structural / Use Cases)
+const sendMainCategoryMenu = async (phone) => {
   await sendListMenu(
     phone,
-    `Please select the *Product Category*:`,
-    'Select Product',
+    `Please select a *Product Category*:`,
+    'Select Category',
     [{
-      title: 'Our Products',
-      rows: [
-        { id: 'roofing_sheets', title: 'Roofing Sheets' },
-        { id: 'sheet_type',     title: 'Sheet Type' },
-        { id: 'roofing_acc',    title: 'Roofing Accessories' },
-        { id: 'tmt_bars',       title: 'TMT Bars' },
-        { id: 'cement',         title: 'Cement' },
-        { id: 'steel_pipes',    title: 'Steel Pipes' },
-        { id: 'fibre_boards',   title: 'Fibre Cement Boards' },
-        { id: 'accessories',    title: 'Accessories' },
-      ],
+      title: 'Our Categories',
+      rows: MAIN_CATEGORIES,
     }]
   );
 };
 
-// ── Send Brand/Type List ──────────────────────────────────────────
-const sendBrandMenu = async (phone, productId) => {
-  const product = PRODUCTS[productId];
+// Step 2: Sub-category Menu
+const sendSubCategoryMenu = async (phone, mainCatId) => {
+  const subs = SUB_CATEGORIES[mainCatId];
+  if (!subs) return;
+
+  const label = MAIN_CATEGORIES.find(c => c.id === mainCatId)?.title || 'Products';
+
+  await sendListMenu(
+    phone,
+    `Please select a *Sub-Category* under ${label}:`,
+    'Select Sub-Category',
+    [{
+      title: label,
+      rows: subs,
+    }]
+  );
+};
+
+// Step 3a: Brand Menu
+const sendBrandMenu = async (phone, subCatId) => {
+  const product = PRODUCTS[subCatId];
   if (!product) return;
 
   await sendListMenu(
@@ -163,11 +225,24 @@ const sendBrandMenu = async (phone, productId) => {
   );
 };
 
-// ── Send Thickness/Size List ──────────────────────────────────────
-const sendThicknessMenu = async (phone, productId) => {
-  const product = PRODUCTS[productId];
-  if (!product) return;
+// Step 3b: Sheet Type Menu (only for roofing_sheets)
+const sendSheetTypeMenu = async (phone) => {
+  const product = PRODUCTS['roofing_sheets'];
+  await sendListMenu(
+    phone,
+    `Please select *Sheet Type (Profile)*:`,
+    'Select Type',
+    [{
+      title: 'Sheet Types',
+      rows: product.sheetTypes,
+    }]
+  );
+};
 
+// Step 4: Thickness / Size Menu
+const sendThicknessMenu = async (phone, subCatId) => {
+  const product = PRODUCTS[subCatId];
+  if (!product) return;
   if (product.thickness.length === 0) return 'skip_thickness';
 
   await sendListMenu(
@@ -181,18 +256,82 @@ const sendThicknessMenu = async (phone, productId) => {
   );
 };
 
-// ── Handle Product Selection ──────────────────────────────────────
-const handleProductSelection = async (phone, productId) => {
+// ─────────────────────────────────────────────────────────────────
+// HANDLERS
+// ─────────────────────────────────────────────────────────────────
+
+// Handle Main Category Selection
+const handleMainCategorySelection = async (phone, mainCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
-  lead.productType  = productId;
+  lead.mainCategory = mainCatId;
+  lead.currentStage = 'sub_category';
+  await lead.save();
+
+  // Use Cases → show info, not quote form
+  if (mainCatId === 'use_cases') {
+    await sendSubCategoryMenu(phone, mainCatId);
+    return 'use_case_browse';
+  }
+
+  await sendSubCategoryMenu(phone, mainCatId);
+};
+
+// Handle Sub-category Selection
+const handleSubCategorySelection = async (phone, subCatId) => {
+  const lead = await Lead.findOne({ phone });
+  if (!lead) return;
+
+  // Use Case selected → show info only
+  if (USE_CASES[subCatId]) {
+    const uc = USE_CASES[subCatId];
+    const { sendText, sendButtons } = require('../utils/whatsapp');
+    await sendText(phone,
+      `🏗️ *${uc.title}*\n\n` +
+      uc.items.map(i => `• ${i}`).join('\n') +
+      `\n\nWe supply the right materials for all these applications!`
+    );
+    await sendButtons(phone,
+      `Would you like to request a quote for your project?`,
+      [
+        { id: 'quote_request',  title: '📋 Request Quote' },
+        { id: 'main_menu',      title: '🔙 Main Menu' },
+      ]
+    );
+    lead.currentStage = 'use_case_action';
+    await lead.save();
+    return;
+  }
+
+  // Product sub-category selected → go to brand
+  lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
   lead.currentStage = 'quote_form';
   await lead.save();
 
-  console.log(`✅ Product selected for ${phone}: ${productId}`);
-  await sendBrandMenu(phone, productId);
+  await sendBrandMenu(phone, subCatId);
 };
 
-module.exports = { sendProductMenu, sendBrandMenu, sendThicknessMenu, handleProductSelection, PRODUCTS };
+// Handle Product Selection (legacy alias — keeps stage2 backward compatible)
+const handleProductSelection = async (phone, productId) => {
+  return handleSubCategorySelection(phone, productId);
+};
+
+// ─────────────────────────────────────────────────────────────────
+module.exports = {
+  // Send helpers
+  sendMainCategoryMenu,
+  sendSubCategoryMenu,
+  sendBrandMenu,
+  sendSheetTypeMenu,
+  sendThicknessMenu,
+  // Handlers
+  handleMainCategorySelection,
+  handleSubCategorySelection,
+  handleProductSelection,   // backward compat
+  // Data
+  PRODUCTS,
+  SUB_CATEGORIES,
+  USE_CASES,
+};
