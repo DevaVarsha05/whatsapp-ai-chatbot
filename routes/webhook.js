@@ -67,15 +67,21 @@ router.post('/', async (req, res) => {
 
     // ── MAIN CATEGORY ─────────────────────────────────────────────
     if (lead.currentStage === 'main_category') {
-      if (msgType !== 'interactive') {
-        await sendMainCategoryMenu(phone);
-        return;
-      }
-      const listId = message.interactive?.list_reply?.id;
-      if (!listId) return;
-      await handleMainCategorySelection(phone, listId);
-      return;
+  if (msgType !== 'interactive') {
+    const text = message.text?.body?.trim();
+    if (text) {
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
     }
+    return;
+  }
+  const listId = message.interactive?.list_reply?.id;
+  if (!listId) return;
+  await handleMainCategorySelection(phone, listId);
+  return;
+}
 
     // ── SUB CATEGORY ──────────────────────────────────────────────
     if (lead.currentStage === 'sub_category') {
