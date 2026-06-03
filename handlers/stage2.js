@@ -286,6 +286,7 @@ const handleMainCategorySelection = async (phone, mainCatId) => {
   lead.mainCategory = mainCatId;
   lead.currentStage = 'sub_category';
   await lead.save();
+  await sendSubCategoryMenu(phone, mainCatId);
 };
 
 // Handle Sub-category Selection
@@ -293,6 +294,27 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
+  const USE_CASE_IDS = ['uc_residential', 'uc_commercial', 'uc_industrial_agri'];
+  if (USE_CASE_IDS.includes(subCatId)) {
+    lead.productType  = subCatId;
+    lead.quoteStep    = 'pincode';       // அல்லது உங்களுக்கு suitable next step
+    lead.currentStage = 'quote_form';
+    await lead.save();
+
+    await sendThicknessMenu(phone, subCatId); // thickness [] → skip_thickness return ஆகும்
+    // அல்லது directly next step trigger பண்ண:
+   
+    return;
+  }
+  if (USE_CASE_IDS.includes(subCatId)) {
+  lead.productType  = subCatId;
+  lead.quoteStep    = 'pincode';       // ✅ directly pincode
+  lead.currentStage = 'quote_form';
+  await lead.save();
+
+  await sendText(phone, '📍 Enter your *Delivery PINCODE*:\n(6-digit pincode)');
+  return; // ✅ sendThicknessMenu & handleQuoteFormAnswer remove பண்ணு
+}
   lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
   lead.currentStage = 'quote_form';
