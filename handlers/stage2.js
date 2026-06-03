@@ -231,7 +231,6 @@ const sendBrandMenu = async (phone, subCatId) => {
   const productData = PRODUCTS[subCatId];
   if (!productData) return;
 
-  // Use Cases-ah irundha direct-ah dynamic title mathurom
   const bodyText = (subCatId.includes('uc_') || subCatId.includes('residential'))
     ? `Please select Use Case / Type for ${productData.title}:`
     : `Please select Brand / Type for ${productData.title}:`;
@@ -240,7 +239,6 @@ const sendBrandMenu = async (phone, subCatId) => {
     ? "Select Use Case"
     : "Select Brand";
 
-  // Unga dynamic row items map panra section
   const rows = productData.brands.map(b => ({
     id: b.id,
     title: b.title.substring(0, 24),
@@ -263,7 +261,8 @@ const sendBrandMenu = async (phone, subCatId) => {
     }
   };
 
-  await sendInteractiveMessage(phone, listMessage);
+  // >>> INTHA KADAISI LINE-AH MATTUM CORRECT-AH PAATHU MATHUNGA <<<
+  await sendListMessage(phone, listMessage);
 };
 
 // Step 3b: Sheet Type Menu (only for roofing_sheets)
