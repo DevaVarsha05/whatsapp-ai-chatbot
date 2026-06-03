@@ -1,6 +1,8 @@
 const Lead = require('../models/lead');
 const { sendText,sendListMenu, sendButtons } = require('../utils/whatsapp');
-
+const sendListMessage = async (phone, payload) => {
+  await sendText(phone, payload);
+};
 // ─────────────────────────────────────────────────────────────────
 // PRODUCT HIERARCHY
 // ─────────────────────────────────────────────────────────────────
