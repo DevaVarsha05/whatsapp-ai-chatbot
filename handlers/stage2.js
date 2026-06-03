@@ -295,19 +295,22 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
-  // Use Case selected → show info only
-  if (USE_CASES[subCatId]) {
+   if (USE_CASES[subCatId]) {
     const uc = USE_CASES[subCatId];
-
-    await sendListMenu(
-      phone,
-      `Please select your *Use Case* under ${uc.title}:`,
-      'Select Use Case',
-      [{ title: uc.title, rows: uc.items }]
+    const { sendText, sendButtons } = require('../utils/whatsapp');
+    await sendText(phone,
+      `🏗️ *${uc.title}*\n\n` +
+      uc.items.map(i => `• ${i}`).join('\n') +
+      `\n\nWe supply the right materials for all these applications!`
     );
-
-    lead.currentStage = 'use_case_item';
-    lead.useCaseType  = subCatId;
+    await sendButtons(phone,
+      `Would you like to request a quote for your project?`,
+      [
+        { id: 'quote_request',  title: '📋 Request Quote' },
+        { id: 'main_menu',      title: '🔙 Main Menu' },
+      ]
+    );
+    lead.currentStage = 'use_case_action';
     await lead.save();
     return;
   }
@@ -327,8 +330,7 @@ const handleUseCaseItemSelection = async (phone, itemId) => {
   if (!lead) return;
 
   lead.useCaseItem  = itemId;
-  lead.currentStage = 'quote_form';
-  lead.quoteStep    = 'brand';
+  lead.currentStage = 'main_category';
   await lead.save();
 
   await sendMainCategoryMenu(phone);
