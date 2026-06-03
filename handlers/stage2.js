@@ -1,5 +1,5 @@
 const Lead = require('../models/lead');
-const { sendListMenu, sendText, sendButtons } = require('../utils/whatsapp');
+const { sendListMenu, sendButtons } = require('../utils/whatsapp');
 
 // ─────────────────────────────────────────────────────────────────
 // PRODUCT HIERARCHY
@@ -261,23 +261,7 @@ const sendThicknessMenu = async (phone, subCatId) => {
 // HANDLERS
 // ─────────────────────────────────────────────────────────────────
 
-// Handle Main Category Selection
-// const handleMainCategorySelection = async (phone, mainCatId) => {
-//   const lead = await Lead.findOne({ phone });
-//   if (!lead) return;
 
-//   lead.mainCategory = mainCatId;
-//   lead.currentStage = 'product_selected';
-//   await lead.save();
-
-//   // Use Cases → show info, not quote form
-//   if (mainCatId === 'use_cases') {
-//     await sendSubCategoryMenu(phone, mainCatId);
-//     return 'use_case_browse';
-//   }
-
-//   await sendSubCategoryMenu(phone, mainCatId);
-// };
 
 // Handle Sub-category Selection
 const handleMainCategorySelection = async (phone, selectedId) => {
@@ -376,8 +360,8 @@ module.exports = {
   sendThicknessMenu,
   // Handlers
   handleMainCategorySelection,
- handleSubCategorySelection: handleMainCategorySelection,
-  handleProductSelection:     handleMainCategorySelection,
+  handleSubCategorySelection,
+  handleProductSelection,   // backward compat
   // Data
   PRODUCTS,
   SUB_CATEGORIES,
