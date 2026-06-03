@@ -8,7 +8,7 @@ const {
   sendSubCategoryMenu,
   handleMainCategorySelection,
   handleSubCategorySelection,
-  sendUseCaseItemsMenu
+
 
 } = require('../handlers/stage2');
 const { handleQuoteFormAnswer } = require('../handlers/stage3');
@@ -92,6 +92,7 @@ router.post('/', async (req, res) => {
         return;
       }
       const listId = message.interactive?.list_reply?.id;
+     console.log("🔥 WHATSAPP-LA IRUNDHU VANTHA EXACT ID:", listId);
       if (!listId) return;
       await handleSubCategorySelection(phone, listId);
       return;

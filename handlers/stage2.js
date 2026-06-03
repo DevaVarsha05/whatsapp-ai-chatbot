@@ -273,20 +273,7 @@ const sendThicknessMenu = async (phone, subCatId) => {
   );
 };
 
-const sendUseCaseItemsMenu = async (phone, subCatId) => {
-  const product = PRODUCTS[subCatId];
-  if (!product) return;
 
-  await sendListMenu(
-    phone,
-    `Please select an *Item* under ${product.title}:`,
-    'Select Item',
-    [{
-      title: product.title,
-      rows: product.brands,
-    }]
-  );
-};
 
 // ─────────────────────────────────────────────────────────────────
 // HANDLERS
@@ -311,14 +298,8 @@ const handleSubCategorySelection = async (phone, subCatId) => {
 
   const USE_CASE_IDS = ['uc_residential', 'uc_commercial', 'uc_industrial_agri'];
   if (USE_CASE_IDS.includes(subCatId)) {
-    lead.productType  = subCatId;
-    lead.quoteStep    = 'pincode';
-    lead.currentStage = 'quote_form';
-    await lead.save();
-
-    await sendText(phone, '📍 Enter your *Delivery PINCODE*:\n(6-digit pincode)');
-    return;
-  }
+  
+ 
 
   lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
@@ -326,7 +307,9 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   await lead.save();
 
   await sendBrandMenu(phone, subCatId);
-};
+  return;
+}
+}
 
 // Handle Product Selection (legacy alias — keeps stage2 backward compatible)
 const handleProductSelection = async (phone, productId) => {
@@ -341,7 +324,7 @@ module.exports = {
   sendBrandMenu,
   sendSheetTypeMenu,
   sendThicknessMenu,
-  sendUseCaseItemsMenu,
+  
   // Handlers
   handleMainCategorySelection,
   handleSubCategorySelection,
@@ -349,4 +332,4 @@ module.exports = {
   // Data
   PRODUCTS,
   SUB_CATEGORIES,
-};
+}
