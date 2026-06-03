@@ -98,6 +98,29 @@ router.post('/', async (req, res) => {
       return;
     }
 
+    // >>> EXACT AH INGE INTHA CODE-AH COPY PASTE PANNUNGA <<<
+    // ── USE CASE ITEMS ────────────────────────────────────────────
+    if (lead.currentStage === 'use_case_items') {
+      if (msgType !== 'interactive') {
+        await sendBrandMenu(phone, lead.productType); 
+        return;
+      }
+      const listId = message.interactive?.list_reply?.id;
+      if (!listId) return;
+      
+      // Direct ah inge message send panrom
+      await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
+
+      // Stage-ah thirumba main menu-ku mathuroam
+      lead.currentStage = 'main_category';
+      lead.quoteStep    = '';
+      await lead.save();
+
+      // Main menu-va thirumba user-ku katuroam
+      await sendMainCategoryMenu(phone);
+      return;
+    }
+
     // ── USE CASE ACTION ───────────────────────────────────────────
     if (lead.currentStage === 'use_case_action') {
       if (msgType !== 'interactive') return;
