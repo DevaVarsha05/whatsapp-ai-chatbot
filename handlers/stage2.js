@@ -6,12 +6,11 @@ const { sendListMenu, sendButtons } = require('../utils/whatsapp');
 // ─────────────────────────────────────────────────────────────────
 
 const MAIN_CATEGORIES = [
-  { id: 'roofing_products',       title: '🏠 Roofing Products',         description: 'Sheets, Accessories, Fibre Boards' },
-  { id: 'structural_fastening',   title: '🔩 Structural & Fastening',   description: 'Steel, Pipes, Cement, Fasteners' },
-  { id: 'use_cases',              title: '🏗️ Use Cases',                description: 'Residential, Commercial, Industrial' },
+  { id: 'roofing_products',       title: '🏠 Roofing Products',   description: 'Sheets, Accessories, Fibre Boards' },
+  { id: 'structural_fastening',   title: '🔩 Structural',         description: 'Steel, Pipes, Cement, Fasteners' },
+  { id: 'use_cases',              title: '🏗️ Use Cases',          description: 'Residential, Commercial, Industrial' },
 ];
 
-// ── Sub-categories per main category ─────────────────────────────
 const SUB_CATEGORIES = {
   roofing_products: [
     { id: 'roofing_sheets',   title: ' Roofing Sheets',        description: 'JSW Everglow, Colouron+, Pragati+...' },
@@ -27,7 +26,7 @@ const SUB_CATEGORIES = {
   use_cases: [
     { id: 'uc_residential',     title: '🏡 Residential',               description: 'House Terraces, Balcony, Frontage' },
     { id: 'uc_commercial',      title: '🏪 Commercial',                description: 'Shop Extensions, Shelters, Cabins' },
-    { id: 'uc_industrial_agri', title: '🏭 Industrial / Agricultural',  description: 'Car Parking, Cattle Shed, Godown' },
+    { id: 'uc_industrial_agri', title: '🏭 Industrial/Agri',           description: 'Car Parking, Cattle Shed, Godown' },
   ],
 };
 
@@ -98,7 +97,7 @@ const PRODUCTS = {
 
   // 2.1 Structural Steel
   structural_steel: {
-    title: 'Structural Steel (TMT Bars)',
+    title: 'Structural Steel (TMT)',
     brands: [
       { id: 'ars550d', title: 'ARS550D TMT Bars' },
     ],
@@ -162,8 +161,8 @@ const PRODUCTS = {
     title: 'Residential',
     brands: [
       { id: 'house_terraces',            title: 'House Terraces' },
-      { id: 'balcony_window_extensions', title: 'Balcony & Window Extensions' },
-      { id: 'frontage_backyard',         title: 'Frontage / Backyard Area' },
+      { id: 'balcony_window_extensions', title: 'Balcony Extensions' },
+      { id: 'frontage_backyard',         title: 'Frontage/Backyard' },
     ],
     thickness: [],
   },
@@ -175,27 +174,27 @@ const PRODUCTS = {
       { id: 'shop_extensions',    title: 'Shop Extensions' },
       { id: 'transit_shelters',   title: 'Transit Shelters' },
       { id: 'security_cabins',    title: 'Security Cabins' },
-      { id: 'walkways_corridors', title: 'Walkways / Corridors' },
+      { id: 'walkways_corridors', title: 'Walkways/Corridors' },
     ],
     thickness: [],
   },
 
   // 3.3 Industrial / Agricultural Use Cases
   uc_industrial_agri: {
-    title: 'Industrial / Agricultural',
+    title: 'Industrial/Agricultural',
     brands: [
-      { id: 'car_parking_vehicle_shed',  title: 'Car Parking / Vehicle Shed' },
-      { id: 'cattle_shed_poultry_farms', title: 'Cattle Shed & Poultry Farms' },
+      { id: 'car_parking_vehicle_shed',  title: 'Car Parking/Shed' },
+      { id: 'cattle_shed_poultry_farms', title: 'Cattle/Poultry Shed' },
       { id: 'godown',                    title: 'Godown' },
     ],
     thickness: [],
   },
 };
-
 // ─────────────────────────────────────────────────────────────────
 // SEND FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
 
+// Step 1: Main Category Menu
 // Step 1: Main Category Menu
 const sendMainCategoryMenu = async (phone) => {
   await sendListMenu(
@@ -286,7 +285,8 @@ const handleMainCategorySelection = async (phone, mainCatId) => {
   lead.mainCategory = mainCatId;
   lead.currentStage = 'sub_category';
   await lead.save();
-  await sendSubCategoryMenu(phone, mainCatId);
+
+  await sendSubCategoryMenu(phone, mainCatId); // ✅ sub menu அனுப்பு
 };
 
 // Handle Sub-category Selection
@@ -297,24 +297,14 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   const USE_CASE_IDS = ['uc_residential', 'uc_commercial', 'uc_industrial_agri'];
   if (USE_CASE_IDS.includes(subCatId)) {
     lead.productType  = subCatId;
-    lead.quoteStep    = 'pincode';       // அல்லது உங்களுக்கு suitable next step
+    lead.quoteStep    = 'pincode';
     lead.currentStage = 'quote_form';
     await lead.save();
 
-    await sendThicknessMenu(phone, subCatId); // thickness [] → skip_thickness return ஆகும்
-    // அல்லது directly next step trigger பண்ண:
-   
+    await sendText(phone, '📍 Enter your *Delivery PINCODE*:\n(6-digit pincode)');
     return;
   }
-  if (USE_CASE_IDS.includes(subCatId)) {
-  lead.productType  = subCatId;
-  lead.quoteStep    = 'pincode';       // ✅ directly pincode
-  lead.currentStage = 'quote_form';
-  await lead.save();
 
-  await sendText(phone, '📍 Enter your *Delivery PINCODE*:\n(6-digit pincode)');
-  return; // ✅ sendThicknessMenu & handleQuoteFormAnswer remove பண்ணு
-}
   lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
   lead.currentStage = 'quote_form';
