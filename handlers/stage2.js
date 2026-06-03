@@ -1,5 +1,5 @@
 const Lead = require('../models/lead');
-const { sendListMenu, sendButtons } = require('../utils/whatsapp');
+const { sendText,sendListMenu, sendButtons } = require('../utils/whatsapp');
 
 // ─────────────────────────────────────────────────────────────────
 // PRODUCT HIERARCHY
