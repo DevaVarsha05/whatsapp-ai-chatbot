@@ -228,18 +228,42 @@ const sendSubCategoryMenu = async (phone, mainCatId) => {
 
 // Step 3a: Brand Menu (works for both products AND use cases)
 const sendBrandMenu = async (phone, subCatId) => {
-  const product = PRODUCTS[subCatId];
-  if (!product) return;
+  const productData = PRODUCTS[subCatId];
+  if (!productData) return;
 
-  await sendListMenu(
-    phone,
-    `Please select *Brand / Type* for ${product.title}:`,
-    'Select Brand',
-    [{
-      title: product.title,
-      rows: product.brands,
-    }]
-  );
+  // Use Cases-ah irundha direct-ah dynamic title mathurom
+  const bodyText = (subCatId.includes('uc_') || subCatId.includes('residential'))
+    ? `Please select Use Case / Type for ${productData.title}:`
+    : `Please select Brand / Type for ${productData.title}:`;
+
+  const buttonLabel = (subCatId.includes('uc_') || subCatId.includes('residential'))
+    ? "Select Use Case"
+    : "Select Brand";
+
+  // Unga dynamic row items map panra section
+  const rows = productData.brands.map(b => ({
+    id: b.id,
+    title: b.title.substring(0, 24),
+    description: b.desc ? b.desc.substring(0, 72) : ""
+  }));
+
+  const listMessage = {
+    type: "list",
+    header: { type: "text", text: "Options Available" },
+    body: { text: bodyText },
+    footer: { text: "Powered by Bot" },
+    action: {
+      button: buttonLabel,
+      sections: [
+        {
+          title: (subCatId.includes('uc_') || subCatId.includes('residential')) ? "Use Cases" : "Brands Available",
+          rows: rows
+        }
+      ]
+    }
+  };
+
+  await sendInteractiveMessage(phone, listMessage);
 };
 
 // Step 3b: Sheet Type Menu (only for roofing_sheets)
