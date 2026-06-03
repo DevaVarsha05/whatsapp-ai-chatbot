@@ -5,8 +5,9 @@ const Lead = require('../models/lead');
 const { handleGreeting } = require('../handlers/stage1');
 const {
   sendMainCategoryMenu,
+  sendSubCategoryMenu,
   handleMainCategorySelection,
-  handleItemSelection,
+  handleSubCategorySelection,
 } = require('../handlers/stage2');
 const { handleQuoteFormAnswer } = require('../handlers/stage3');
 const {
@@ -93,18 +94,7 @@ router.post('/', async (req, res) => {
       await handleSubCategorySelection(phone, listId);
       return;
     }
-     
 
-  if (lead.currentStage === 'use_case_browse') {
-    if (msgType !== 'interactive') {
-      await sendMainCategoryMenu(phone);
-      return;
-    }
-    const listId = message.interactive?.list_reply?.id;
-    if (listId) await handleMainCategorySelection(phone, listId);
-    return;
-  }
-  
     // ── USE CASE ACTION ───────────────────────────────────────────
     if (lead.currentStage === 'use_case_action') {
       if (msgType !== 'interactive') return;
@@ -124,27 +114,16 @@ router.post('/', async (req, res) => {
     }
 
     // ── QUOTE FORM ────────────────────────────────────────────────
-   if (lead.currentStage === 'quote_form') {
-  if (msgType === 'interactive') {
-    const listId = message.interactive?.list_reply?.id;
-    if (listId) await handleQuoteFormAnswer(phone, listId, true);
-  } else if (msgType === 'text') {
-    const text = message.text?.body?.trim();
-    if (!text) return;
-    // pincode step-ல மட்டும் handleQuoteFormAnswer
-    if (lead.quoteStep === 'pincode') {
-      await handleQuoteFormAnswer(phone, text, false);
-    } else {
-      // Random text → AI answer with quote context
-      const contextMsg = `[Note: Customer is currently filling a quote form for "${lead.productType}". Answer their product question briefly, then politely remind them to continue selecting from the menu options above to complete their quote.]`;
-      lead.messages.push({ role: 'user', content: text });
-      const aiReply = await handleAIMessage(phone, text, lead.messages, contextMsg);
-      if (aiReply) lead.messages.push(aiReply);
-      await lead.save();
+    if (lead.currentStage === 'quote_form') {
+      if (msgType === 'interactive') {
+        const listId = message.interactive?.list_reply?.id;
+        if (listId) await handleQuoteFormAnswer(phone, listId, true);
+      } else if (msgType === 'text') {
+        const text = message.text?.body?.trim();
+        if (text) await handleQuoteFormAnswer(phone, text, false);
+      }
+      return;
     }
-  }
-  return;
-}
 
     // ── CATALOG BROWSE ────────────────────────────────────────────
     if (lead.currentStage === 'catalog_browse') {

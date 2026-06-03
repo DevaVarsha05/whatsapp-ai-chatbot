@@ -174,7 +174,6 @@ const USE_CASES = {
   },
 };
 
-
 // ─────────────────────────────────────────────────────────────────
 // SEND FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
@@ -261,90 +260,59 @@ const sendThicknessMenu = async (phone, subCatId) => {
 // HANDLERS
 // ─────────────────────────────────────────────────────────────────
 
-
-
-// Handle Sub-category Selection
-const handleMainCategorySelection = async (phone, selectedId) => {
+// Handle Main Category Selection
+const handleMainCategorySelection = async (phone, mainCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
-  // Use Cases → show sub list
-  if (selectedId === 'use_cases') {
-    lead.currentStage = 'use_case_browse';
-    await lead.save();
-    await sendListMenu(phone, `Please select a *Use Case*:`, 'Select Use Case', [{
-      title: '🏗️ Use Cases',
-      rows: [
-        { id: 'uc_residential', title: '3.1 Residential',  description: 'House Terraces, Balcony...' },
-        { id: 'uc_commercial',  title: '3.2 Commercial',   description: 'Shops, Shelters, Cabins...' },
-        { id: 'uc_industrial',  title: '3.3 Industrial',   description: 'Parking, Sheds, Godown' },
-      ],
-    }]);
-    return;
+  lead.mainCategory = mainCatId;
+  lead.currentStage = 'sub_category';
+  await lead.save();
+
+  // Use Cases → show info, not quote form
+  if (mainCatId === 'use_cases') {
+    await sendSubCategoryMenu(phone, mainCatId);
+    return 'use_case_browse';
   }
 
-  // Residential → show items
-  if (selectedId === 'uc_residential') {
-    lead.currentStage = 'use_case_browse';
-    await lead.save();
-    await sendListMenu(phone, `Please select a *Residential* use case:`, 'Select', [{
-      title: '3.1 Residential',
-      rows: [
-        { id: 'uc_house_terrace', title: 'House Terraces',              description: 'Roofing for house' },
-        { id: 'uc_balcony',       title: 'Balcony & Window Extensions', description: 'Balcony cover' },
-        { id: 'uc_frontage',      title: 'Frontage / Backyard Area',    description: 'Front/back yard' },
-      ],
-    }]);
-    return;
-  }
+  await sendSubCategoryMenu(phone, mainCatId);
+};
 
-  // Commercial → show items
-  if (selectedId === 'uc_commercial') {
-    lead.currentStage = 'use_case_browse';
-    await lead.save();
-    await sendListMenu(phone, `Please select a *Commercial* use case:`, 'Select', [{
-      title: '3.2 Commercial',
-      rows: [
-        { id: 'uc_shop',    title: 'Shop Extensions',    description: 'Shop cover' },
-        { id: 'uc_transit', title: 'Transit Shelters',   description: 'Bus/auto stand' },
-        { id: 'uc_cabin',   title: 'Security Cabins',    description: 'Security cabin' },
-        { id: 'uc_walkway', title: 'Walkways/Corridors', description: 'Covered walkway' },
-      ],
-    }]);
-    return;
-  }
+// Handle Sub-category Selection
+const handleSubCategorySelection = async (phone, subCatId) => {
+  const lead = await Lead.findOne({ phone });
+  if (!lead) return;
 
-  // Industrial → show items
-  if (selectedId === 'uc_industrial') {
-    lead.currentStage = 'use_case_browse';
-    await lead.save();
-    await sendListMenu(phone, `Please select an *Industrial* use case:`, 'Select', [{
-      title: '3.3 Industrial',
-      rows: [
-        { id: 'uc_parking', title: 'Car Parking / Vehicle Shed', description: 'Vehicle shed' },
-        { id: 'uc_cattle',  title: 'Cattle Shed & Poultry',      description: 'Farm shed' },
-        { id: 'uc_godown',  title: 'Godown',                     description: 'Storage godown' },
-      ],
-    }]);
-    return;
-  }
-
-  // Any use case item → unavailable message
-  if (selectedId.startsWith('uc_')) {
+  // Use Case selected → show info only
+  if (USE_CASES[subCatId]) {
+    const uc = USE_CASES[subCatId];
+    const { sendText, sendButtons } = require('../utils/whatsapp');
     await sendText(phone,
-      `⚠️ Still waiting for the product update from the customer.\nWill update once received; currently unavailable.`
+      `🏗️ *${uc.title}*\n\n` +
+      uc.items.map(i => `• ${i}`).join('\n') +
+      `\n\nWe supply the right materials for all these applications!`
     );
-    await sendMainCategoryMenu(phone);
+    await sendButtons(phone,
+      `Would you like to request a quote for your project?`,
+      [
+        { id: 'quote_request',  title: '📋 Request Quote' },
+        { id: 'main_menu',      title: '🔙 Main Menu' },
+      ]
+    );
+    lead.currentStage = 'use_case_action';
+    await lead.save();
     return;
   }
 
-  // Product selected → go to brand
-  lead.productType  = selectedId;
+  // Product sub-category selected → go to brand
+  lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
   lead.currentStage = 'quote_form';
   await lead.save();
-  await sendBrandMenu(phone, selectedId);
+
+  await sendBrandMenu(phone, subCatId);
 };
+
 // Handle Product Selection (legacy alias — keeps stage2 backward compatible)
 const handleProductSelection = async (phone, productId) => {
   return handleSubCategorySelection(phone, productId);
