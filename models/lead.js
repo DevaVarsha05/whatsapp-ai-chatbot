@@ -10,8 +10,7 @@ const leadSchema = new mongoose.Schema({
 
   // Stage 2 — new hierarchy fields
   mainCategory:      String,   // 'roofing_products' | 'structural_fastening' | 'use_cases'
-  useCaseType:       String,   // 'residential' | 'commercial' | 'industrial'
-  useCaseItem:       String,   // 'house_terrace' | 'balcony' etc.
+  
   // Stage 3 — Quote form
   productType:       String,   // sub-category id e.g. 'roofing_sheets', 'pipes'
   quoteStep:         String,   // 'brand' | 'sheet_type' | 'thickness' | 'pincode' | 'done'
