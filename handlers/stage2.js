@@ -1,374 +1,214 @@
+const express = require('express');
+const router  = express.Router();
+
 const Lead = require('../models/lead');
-const { sendListMenu, sendButtons, sendText } = require('../utils/whatsapp');
+const { handleGreeting } = require('../handlers/stage1');
+const {
+  sendMainCategoryMenu,
+  sendSubCategoryMenu,
+  handleMainCategorySelection,
+  handleSubCategorySelection,
+} = require('../handlers/stage2');
+const { handleQuoteFormAnswer } = require('../handlers/stage3');
+const {
+  sendCatalogMenu,
+  handleCatalogProductSelect,
+  handleCatalogAction,
+  handleCatalogFormAnswer,
+} = require('../handlers/stagecatalogtemp');
+const { sendText }        = require('../utils/whatsapp');
+const { handleAIMessage } = require('../handlers/aiassisatnt');
 
-// ─────────────────────────────────────────────────────────────────
-// MAIN CATEGORIES
-// ─────────────────────────────────────────────────────────────────
-const MAIN_CATEGORIES = [
-  { id: 'roofing_products',     title: '🏠 Roofing Products',       description: 'Sheets, Accessories, Fibre Boards' },
-  { id: 'structural_fastening', title: '🔩 Structural & Fastening', description: 'Steel, Pipes, Cement, Fasteners' },
-  { id: 'use_cases',            title: '🏗️ Use Cases',              description: 'Residential, Commercial, Industrial' },
-];
+// ── GET: Webhook Verification ─────────────────────────────────────
+router.get('/', (req, res) => {
+  const mode      = req.query['hub.mode'];
+  const token     = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-// ─────────────────────────────────────────────────────────────────
-// PRODUCTS DATA
-// ─────────────────────────────────────────────────────────────────
-const PRODUCTS = {
-  roofing_sheets: {
-    title: 'Roofing Sheets',
-    brands: [
-      { id: 'jsw_everglow',   title: 'JSW Everglow' },
-      { id: 'jsw_colouron',   title: 'JSW Colouron+' },
-      { id: 'jsw_pragati',    title: 'JSW Pragati+' },
-      { id: 'jsw_silveron',   title: 'JSW Silveron+' },
-      { id: 'jsw_vishwas',    title: 'JSW Vishwas+' },
-      { id: 'jsw_colorvista', title: 'JSW ColorVista' },
-    ],
-    sheetTypes: [
-      { id: 'profile_sheet',       title: 'Profile Sheet' },
-      { id: 'crimp_sheet',         title: 'Crimp Sheet' },
-      { id: 'arch_sheet',          title: 'Arch Sheet' },
-      { id: 'profile_ridge_sheet', title: 'Profile Ridge Sheet' },
-      { id: 'plain_sheet',         title: 'Plain Sheet' },
-    ],
-    thickness: [
-      { id: '0.35mm', title: '0.35mm' },
-      { id: '0.40mm', title: '0.40mm' },
-      { id: '0.45mm', title: '0.45mm' },
-      { id: '0.47mm', title: '0.47mm' },
-      { id: '0.50mm', title: '0.50mm' },
-      { id: '0.60mm', title: '0.60mm' },
-    ],
-  },
-  roofing_acc: {
-    title: 'Roofing Accessories',
-    brands: [
-      { id: 'l_corner',   title: 'JSW L Corner' },
-      { id: 'gutter',     title: 'Gutter' },
-      { id: 'ridge',      title: 'Ridge' },
-      { id: 'l_flashing', title: 'L Flashing' },
-      { id: 'down_pipe',  title: 'Down Pipe' },
-      { id: 'barge_cap',  title: 'Barge Cap' },
-    ],
-    thickness: [
-      { id: '0.35mm', title: '0.35mm' },
-      { id: '0.40mm', title: '0.40mm' },
-      { id: '0.45mm', title: '0.45mm' },
-      { id: '0.47mm', title: '0.47mm' },
-      { id: '0.50mm', title: '0.50mm' },
-      { id: '0.60mm', title: '0.60mm' },
-    ],
-  },
-  fibre_boards: {
-    title: 'Fibre Cement Boards',
-    brands: [
-      { id: 'everest_standard', title: 'Everest Standard Board' },
-      { id: 'everest_hd',       title: 'Everest HD Board' },
-    ],
-    thickness: [
-      { id: '6mm',  title: '6mm' },
-      { id: '8mm',  title: '8mm' },
-      { id: '10mm', title: '10mm' },
-    ],
-  },
-  structural_steel: {
-    title: 'Structural Steel (TMT Bars)',
-    brands: [
-      { id: 'ars550d', title: 'ARS550D TMT Bars' },
-    ],
-    thickness: [
-      { id: '8mm',  title: '8mm' },
-      { id: '10mm', title: '10mm' },
-      { id: '12mm', title: '12mm' },
-      { id: '16mm', title: '16mm' },
-      { id: '20mm', title: '20mm' },
-    ],
-  },
-  pipes: {
-    title: 'Steel Pipes',
-    brands: [
-      { id: 'ms_pipes', title: 'MS Pipes' },
-      { id: 'gp_pipes', title: 'GP Pipes' },
-    ],
-    thickness: [
-      { id: '1mm',   title: '1mm' },
-      { id: '1.2mm', title: '1.2mm' },
-      { id: '1.6mm', title: '1.6mm' },
-      { id: '2mm',   title: '2mm' },
-      { id: '2.5mm', title: '2.5mm' },
-      { id: '3mm',   title: '3mm' },
-      { id: '4mm',   title: '4mm' },
-    ],
-  },
-  cement: {
-    title: 'Cement',
-    brands: [
-      { id: 'dalmia', title: 'Dalmia Cement' },
-    ],
-    thickness: [],
-  },
-  fasteners: {
-    title: 'Fasteners & Fittings',
-    brands: [
-      { id: 'tata_screws',      title: 'TATA Screws' },
-      { id: 'louvers',          title: 'Louvers' },
-      { id: 'roof_ventilators', title: 'Roof Ventilators' },
-      { id: 'thoovanam',        title: 'Thoovanam' },
-      { id: 'mugappu',          title: 'Mugappu' },
-    ],
-    thickness: [
-      { id: 'screw_19mm',  title: 'Screw 19mm' },
-      { id: 'screw_25mm',  title: 'Screw 25mm' },
-      { id: 'screw_55mm',  title: 'Screw 55mm' },
-      { id: 'thoovanam_6', title: 'Thoovanam 6"' },
-      { id: 'thoovanam_8', title: 'Thoovanam 8"' },
-    ],
-  },
-};
-
-const USE_CASES = {
-  residential: {
-    title: 'Residential',
-    items: ['House Terraces', 'Balcony & Window Extensions', 'Frontage / Backyard Area'],
-  },
-  commercial: {
-    title: 'Commercial',
-    items: ['Shop Extensions', 'Transit Shelters', 'Security Cabins', 'Walkways / Corridors'],
-  },
-  industrial: {
-    title: 'Industrial / Agricultural',
-    items: ['Car Parking / Vehicle Shed', 'Cattle Shed & Poultry Farms', 'Godown'],
-  },
-};
-
-// ─────────────────────────────────────────────────────────────────
-// NESTED LIST BUILDERS
-// ─────────────────────────────────────────────────────────────────
-
-// Roofing Products full nested list (1 sendListMenu call)
-const sendRoofingProductsList = async (phone) => {
-  await sendListMenu(
-    phone,
-    `Please select from *🏠 Roofing Products*:`,
-    'View Products',
-    [
-      {
-        title: '1.1 Roofing Sheets — Brands (JSW)',
-        rows: PRODUCTS.roofing_sheets.brands,
-      },
-      {
-        title: '1.1 Roofing Sheets — Sheet Types',
-        rows: PRODUCTS.roofing_sheets.sheetTypes,
-      },
-      {
-        title: '1.1 Roofing Sheets — Thickness',
-        rows: PRODUCTS.roofing_sheets.thickness,
-      },
-      {
-        title: '1.2 Roofing Accessories — Items (JSW)',
-        rows: PRODUCTS.roofing_acc.brands,
-      },
-      {
-        title: '1.2 Roofing Accessories — Thickness',
-        rows: PRODUCTS.roofing_acc.thickness,
-      },
-      {
-        title: '1.3 Fibre Cement Boards — Items (Everest)',
-        rows: PRODUCTS.fibre_boards.brands,
-      },
-      {
-        title: '1.3 Fibre Cement Boards — Thickness',
-        rows: PRODUCTS.fibre_boards.thickness,
-      },
-    ]
-  );
-};
-
-// Structural & Fastening full nested list
-const sendStructuralList = async (phone) => {
-  await sendListMenu(
-    phone,
-    `Please select from *🔩 Structural & Fastening*:`,
-    'View Products',
-    [
-      {
-        title: '2.1 Structural Steel — Product',
-        rows: PRODUCTS.structural_steel.brands,
-      },
-      {
-        title: '2.1 Structural Steel — Sizes',
-        rows: PRODUCTS.structural_steel.thickness,
-      },
-      {
-        title: '2.2 Pipes — Types',
-        rows: PRODUCTS.pipes.brands,
-      },
-      {
-        title: '2.2 Pipes — Thickness',
-        rows: PRODUCTS.pipes.thickness,
-      },
-      {
-        title: '2.3 Cement',
-        rows: PRODUCTS.cement.brands,
-      },
-      {
-        title: '2.4 Fasteners & Fittings — Items',
-        rows: PRODUCTS.fasteners.brands,
-      },
-      {
-        title: '2.4 Fasteners & Fittings — Sizes',
-        rows: PRODUCTS.fasteners.thickness,
-      },
-    ]
-  );
-};
-
-// Use Cases full nested list
-const sendUseCasesList = async (phone) => {
-  await sendListMenu(
-    phone,
-    `Please select from *🏗️ Use Cases*:`,
-    'View Use Cases',
-    [
-      {
-        title: '3.1 Residential',
-        rows: USE_CASES.residential.items.map(i => ({ id: 'uc_' + i.toLowerCase().replace(/\s+/g, '_'), title: i })),
-      },
-      {
-        title: '3.2 Commercial',
-        rows: USE_CASES.commercial.items.map(i => ({ id: 'uc_' + i.toLowerCase().replace(/\s+/g, '_'), title: i })),
-      },
-      {
-        title: '3.3 Industrial / Agricultural',
-        rows: USE_CASES.industrial.items.map(i => ({ id: 'uc_' + i.toLowerCase().replace(/\s+/g, '_'), title: i })),
-      },
-    ]
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────
-// STEP 1: Main Category Menu
-// ─────────────────────────────────────────────────────────────────
-const sendMainCategoryMenu = async (phone) => {
-  await sendListMenu(
-    phone,
-    `Please select a *Product Category*:`,
-    'Select Category',
-    [{
-      title: 'Our Categories',
-      rows: MAIN_CATEGORIES,
-    }]
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────
-// STEP 2: Main Category Selected → Send Full Nested List
-// ─────────────────────────────────────────────────────────────────
-const handleMainCategorySelection = async (phone, mainCatId) => {
-  const lead = await Lead.findOne({ phone });
-  if (!lead) return;
-
-  lead.mainCategory = mainCatId;
-  lead.currentStage = 'product_selected';
-  await lead.save();
-
-  if (mainCatId === 'roofing_products') {
-    await sendRoofingProductsList(phone);
-  } else if (mainCatId === 'structural_fastening') {
-    await sendStructuralList(phone);
-  } else if (mainCatId === 'use_cases') {
-    await sendUseCasesList(phone);
+  if (mode === 'subscribe' && token === process.env.VERIFY_TOKEN) {
+    console.log('✅ Webhook verified');
+    return res.status(200).send(challenge);
   }
-};
+  res.sendStatus(403);
+});
 
-// ─────────────────────────────────────────────────────────────────
-// STEP 3: Item Selected → identify product type + start quote
-// ─────────────────────────────────────────────────────────────────
+// ── POST: Receive Messages ────────────────────────────────────────
+router.post('/', async (req, res) => {
+  res.sendStatus(200);
 
-// Map any selected item id → which productType it belongs to
-const resolveProductType = (itemId) => {
-  if (PRODUCTS.roofing_sheets.brands.find(b => b.id === itemId))    return 'roofing_sheets';
-  if (PRODUCTS.roofing_sheets.sheetTypes.find(b => b.id === itemId)) return 'roofing_sheets';
-  if (PRODUCTS.roofing_sheets.thickness.find(b => b.id === itemId)) return 'roofing_sheets';
-  if (PRODUCTS.roofing_acc.brands.find(b => b.id === itemId))       return 'roofing_acc';
-  if (PRODUCTS.roofing_acc.thickness.find(b => b.id === itemId))    return 'roofing_acc';
-  if (PRODUCTS.fibre_boards.brands.find(b => b.id === itemId))      return 'fibre_boards';
-  if (PRODUCTS.fibre_boards.thickness.find(b => b.id === itemId))   return 'fibre_boards';
-  if (PRODUCTS.structural_steel.brands.find(b => b.id === itemId))  return 'structural_steel';
-  if (PRODUCTS.structural_steel.thickness.find(b => b.id === itemId)) return 'structural_steel';
-  if (PRODUCTS.pipes.brands.find(b => b.id === itemId))             return 'pipes';
-  if (PRODUCTS.pipes.thickness.find(b => b.id === itemId))          return 'pipes';
-  if (PRODUCTS.cement.brands.find(b => b.id === itemId))            return 'cement';
-  if (PRODUCTS.fasteners.brands.find(b => b.id === itemId))         return 'fasteners';
-  if (PRODUCTS.fasteners.thickness.find(b => b.id === itemId))      return 'fasteners';
-  return null;
-};
+  try {
+    const body = req.body;
+    if (!body.object || !body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) return;
 
-const handleItemSelection = async (phone, itemId) => {
-  const lead = await Lead.findOne({ phone });
-  if (!lead) return;
+    const value   = body.entry[0].changes[0].value;
+    const message = value.messages[0];
+    const contact = value.contacts?.[0];
 
-  // Use case item selected → show quote button
-  if (itemId.startsWith('uc_')) {
-    await sendButtons(phone,
-      `Would you like to request a quote for your project?`,
-      [
-        { id: 'quote_request', title: '📋 Request Quote' },
-        { id: 'main_menu',     title: '🔙 Main Menu' },
-      ]
-    );
-    lead.currentStage = 'use_case_action';
-    await lead.save();
+    const phone   = message.from;
+    const name    = contact?.profile?.name || 'Customer';
+    const msgType = message.type;
+
+    console.log(`📨 Message from ${phone} (${name}): type=${msgType}`);
+    
+    let lead = await Lead.findOne({ phone });
+    console.log(`📌 Current stage: ${lead?.currentStage}`);
+    const isGreetWord =
+      msgType === 'text' &&
+      ['hi', 'hello', 'hey', 'menu', 'start',
+       'shiva', 'shiva steel', 'sivabalaaji', 'siva', 'steel'].includes(
+        message.text?.body?.trim().toLowerCase()
+      );
+
+    // ── New or Greet → direct to main category ────────────────────
+    if (!lead || isGreetWord) {
+      await handleGreeting(phone, name);
+      return;
+    }
+
+    // ── MAIN CATEGORY ─────────────────────────────────────────────
+    if (lead.currentStage === 'main_category') {
+  if (msgType !== 'interactive') {
+    const text = message.text?.body?.trim();
+    if (text) {
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
+    }
     return;
   }
+  const listId = message.interactive?.list_reply?.id;
+  if (!listId) return;
+  await handleMainCategorySelection(phone, listId);
+  return;
+}
 
-  const productType = resolveProductType(itemId);
-  if (!productType) return;
+    // ── SUB CATEGORY ──────────────────────────────────────────────
+    if (lead.currentStage === 'sub_category') {
+      if (msgType !== 'interactive') {
+        await sendSubCategoryMenu(phone, lead.mainCategory);
+        return;
+      }
+      const listId = message.interactive?.list_reply?.id;
+      if (!listId) return;
+      await handleSubCategorySelection(phone, listId);
+      return;
+    }
 
-  lead.productType  = productType;
-  lead.quoteStep    = 'brand';
-  lead.currentStage = 'quote_form';
-  await lead.save();
+    // ── USE CASE ACTION ───────────────────────────────────────────
+    if (lead.currentStage === 'use_case_action') {
+      if (msgType !== 'interactive') return;
+      const buttonId = message.interactive?.button_reply?.id;
+      if (!buttonId) return;
 
-  // Send brand menu for selected product
-  await sendListMenu(
-    phone,
-    `Please select *Brand / Type* for ${PRODUCTS[productType].title}:`,
-    'Select Brand',
-    [{ title: PRODUCTS[productType].title, rows: PRODUCTS[productType].brands }]
-  );
-};
+      if (buttonId === 'quote_request') {
+        lead.currentStage = 'main_category';
+        await lead.save();
+        await sendMainCategoryMenu(phone);
+      } else if (buttonId === 'main_menu') {
+        lead.currentStage = 'main_category';
+        await lead.save();
+        await sendMainCategoryMenu(phone);
+      }
+      return;
+    }
 
-// Thickness menu (used by stage3)
-const sendThicknessMenu = async (phone, subCatId) => {
-  const product = PRODUCTS[subCatId];
-  if (!product) return;
-  if (product.thickness.length === 0) return 'skip_thickness';
-  await sendListMenu(
-    phone,
-    `Please select *Size / Thickness*:`,
-    'Select Size',
-    [{ title: 'Available Sizes', rows: product.thickness }]
-  );
-};
+    // ── QUOTE FORM ────────────────────────────────────────────────
+   if (lead.currentStage === 'quote_form') {
+  if (msgType === 'interactive') {
+    const listId = message.interactive?.list_reply?.id;
+    if (listId) await handleQuoteFormAnswer(phone, listId, true);
+  } else if (msgType === 'text') {
+    const text = message.text?.body?.trim();
+    if (!text) return;
+    // pincode step-ல மட்டும் handleQuoteFormAnswer
+    if (lead.quoteStep === 'pincode') {
+      await handleQuoteFormAnswer(phone, text, false);
+    } else {
+      // Random text → AI answer with quote context
+      const contextMsg = `[Note: Customer is currently filling a quote form for "${lead.productType}". Answer their product question briefly, then politely remind them to continue selecting from the menu options above to complete their quote.]`;
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages, contextMsg);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
+    }
+  }
+  return;
+}
 
-// Sheet type menu (used by stage3)
-const sendSheetTypeMenu = async (phone) => {
-  await sendListMenu(
-    phone,
-    `Please select *Sheet Type*:`,
-    'Select Type',
-    [{ title: 'Sheet Types', rows: PRODUCTS.roofing_sheets.sheetTypes }]
-  );
-};
+    // ── CATALOG BROWSE ────────────────────────────────────────────
+    if (lead.currentStage === 'catalog_browse') {
+      if (msgType !== 'interactive') {
+        await sendCatalogMenu(phone);
+        return;
+      }
+      const listId = message.interactive?.list_reply?.id;
+      if (listId) await handleCatalogProductSelect(phone, listId);
+      return;
+    }
 
-// ─────────────────────────────────────────────────────────────────
-module.exports = {
-  sendMainCategoryMenu,
-  handleMainCategorySelection,
-  handleItemSelection,
-  sendThicknessMenu,
-  sendSheetTypeMenu,
-  PRODUCTS,
-  USE_CASES,
-};
+    // ── CATALOG ACTION ────────────────────────────────────────────
+    if (lead.currentStage === 'catalog_action') {
+      if (msgType !== 'interactive') return;
+      const buttonId = message.interactive?.button_reply?.id;
+      if (buttonId) await handleCatalogAction(phone, buttonId);
+      return;
+    }
+
+    // ── CATALOG FORM ──────────────────────────────────────────────
+    if (lead.currentStage === 'catalog_form') {
+      if (msgType === 'interactive') {
+        const listId = message.interactive?.list_reply?.id;
+        if (listId) await handleCatalogFormAnswer(phone, listId);
+      } else if (msgType === 'text') {
+        const text = message.text?.body?.trim();
+        if (text) await handleCatalogFormAnswer(phone, text);
+      }
+      return;
+    }
+
+    // ── TRACKING ──────────────────────────────────────────────────
+    if (lead.currentStage === 'tracking') {
+      if (msgType === 'text') {
+        const orderId = message.text?.body?.trim();
+        await sendText(phone,
+          `🔍 Tracking Order: *${orderId}*\n\nOur team will update you shortly. For immediate help: 📞 9876543210`
+        );
+      }
+      return;
+    }
+
+    // ── COMPLETED ─────────────────────────────────────────────────
+    if (lead.currentStage === 'completed') {
+      if (msgType === 'text' && message.text?.body?.trim().toLowerCase() === 'yes') {
+        lead.currentStage = 'main_category';
+        await lead.save();
+        await sendMainCategoryMenu(phone);
+      } else {
+        await sendText(phone,
+          `Hello ${name}! 👋 Your quote is already submitted.\nWould you like to request another? Reply *Yes* to start again.`
+        );
+      }
+      return;
+    }
+
+    // ── AI ASSISTANT: unhandled text ──────────────────────────────
+    if (msgType === 'text') {
+      const text = message.text?.body?.trim();
+      if (!text) return;
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
+      return;
+    }
+
+  } catch (err) {
+    console.error('❌ Webhook error:', err.message);
+    console.error('❌ Error details:', err.response?.data);
+  }
+
+  
+});
+
+module.exports = router;
