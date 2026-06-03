@@ -8,6 +8,7 @@ const {
   sendSubCategoryMenu,
   handleMainCategorySelection,
   handleSubCategorySelection,
+  sendUseCaseItemsMenu
 
 } = require('../handlers/stage2');
 const { handleQuoteFormAnswer } = require('../handlers/stage3');

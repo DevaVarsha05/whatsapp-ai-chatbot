@@ -11,6 +11,22 @@ const VALID_PINCODES = [
   '624005',
 ];
 
+const handleUseCaseItemSelection = async (phone, itemId) => {
+  const lead = await Lead.findOne({ phone });
+  if (!lead) return;
+
+  // Show coming soon message
+  await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
+
+  // Reset stage to main menu
+  lead.currentStage = 'main_category';
+  lead.quoteStep    = '';
+  await lead.save();
+
+  // Send Main Menu again
+  await sendMainCategoryMenu(phone);
+};
+
 // ── Handle Brand Selection ────────────────────────────────────────
 const handleBrandSelection = async (phone, brandId) => {
   const lead = await Lead.findOne({ phone });

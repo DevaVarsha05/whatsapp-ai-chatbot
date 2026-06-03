@@ -273,6 +273,21 @@ const sendThicknessMenu = async (phone, subCatId) => {
   );
 };
 
+const sendUseCaseItemsMenu = async (phone, subCatId) => {
+  const product = PRODUCTS[subCatId];
+  if (!product) return;
+
+  await sendListMenu(
+    phone,
+    `Please select an *Item* under ${product.title}:`,
+    'Select Item',
+    [{
+      title: product.title,
+      rows: product.brands,
+    }]
+  );
+};
+
 // ─────────────────────────────────────────────────────────────────
 // HANDLERS
 // ─────────────────────────────────────────────────────────────────
@@ -326,6 +341,7 @@ module.exports = {
   sendBrandMenu,
   sendSheetTypeMenu,
   sendThicknessMenu,
+  sendUseCaseItemsMenu,
   // Handlers
   handleMainCategorySelection,
   handleSubCategorySelection,
