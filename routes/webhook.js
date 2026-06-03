@@ -58,9 +58,7 @@ router.post('/', async (req, res) => {
       ['hi', 'hello', 'hey', 'menu', 'start',
        'shiva', 'shiva steel', 'sivabalaaji', 'siva', 'steel'].includes(
         message.text?.body?.trim().toLowerCase()
-      ) || 
-     (msgType === 'interactive' &&
-      message.interactive?.button_reply?.id === 'main_menu');
+      ) 
 
     // ── New or Greet → direct to main category ────────────────────
     if (!lead || isGreetWord) {

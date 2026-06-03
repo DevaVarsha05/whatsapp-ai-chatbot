@@ -156,10 +156,6 @@ const PRODUCTS = {
       { id: 'thoovanam_8', title: 'Thoovanam 8"' },
     ],
   },
-};
-
-// ── Use Case Details (no brand/thickness — info only) ─────────────
-const USE_CASES = {
    residential: {
     title: '3.1 Residential',
     items: [
@@ -186,6 +182,9 @@ const USE_CASES = {
     ],
   },
 };
+
+// ── Use Case Details (no brand/thickness — info only) ─────────────
+
 
 // ─────────────────────────────────────────────────────────────────
 // SEND FUNCTIONS
