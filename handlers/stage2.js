@@ -20,14 +20,14 @@ const SUB_CATEGORIES = {
   ],
   structural_fastening: [
     { id: 'structural_steel', title: ' Structural Steel',      description: 'TMT Bars - ARS550D' },
-    { id: 'pipes',            title: 'Pipes',                 description: 'MS Pipes, GP Pipes' },
+    { id: 'pipes',            title: 'Pipes',                  description: 'MS Pipes, GP Pipes' },
     { id: 'cement',           title: ' Cement',                description: 'Dalmia Cement' },
     { id: 'fasteners',        title: ' Fasteners & Fittings',  description: 'TATA Screws, Louvers, Thoovanam...' },
   ],
   use_cases: [
-    { id: 'residential',      title: ' Residential',           description: 'House Terraces, Balcony, Frontage' },
-    { id: 'commercial',       title: 'Commercial',            description: 'Shop Extensions, Transit Shelters...' },
-    { id: 'industrial',       title: 'Industrial / Agricultural', description: 'Car Parking, Cattle Shed, Godown' },
+    { id: 'uc_residential',     title: '🏡 Residential',               description: 'House Terraces, Balcony, Frontage' },
+    { id: 'uc_commercial',      title: '🏪 Commercial',                description: 'Shop Extensions, Shelters, Cabins' },
+    { id: 'uc_industrial_agri', title: '🏭 Industrial / Agricultural',  description: 'Car Parking, Cattle Shed, Godown' },
   ],
 };
 
@@ -135,7 +135,7 @@ const PRODUCTS = {
     brands: [
       { id: 'dalmia', title: 'Dalmia Cement' },
     ],
-    thickness: [], // No thickness for cement
+    thickness: [],
   },
 
   // 2.4 Fasteners & Fittings
@@ -156,34 +156,39 @@ const PRODUCTS = {
       { id: 'thoovanam_8', title: 'Thoovanam 8"' },
     ],
   },
-};
 
-// ── Use Case Details (no brand/thickness — info only) ─────────────
-const USE_CASES = {
-   residential: {
-    title: '3.1 Residential',
-    items: [
-      { id: 'house_terrace', title: 'House Terraces' },
-      { id: 'balcony',       title: 'Balcony & Window Extensions' },
-      { id: 'frontage',      title: 'Frontage / Backyard Area' },
+  // 3.1 Residential Use Cases
+  uc_residential: {
+    title: 'Residential',
+    brands: [
+      { id: 'house_terraces',            title: 'House Terraces' },
+      { id: 'balcony_window_extensions', title: 'Balcony & Window Extensions' },
+      { id: 'frontage_backyard',         title: 'Frontage / Backyard Area' },
     ],
+    thickness: [],
   },
-  commercial: {
-    title: '3.2 Commercial',
-    items: [
-      { id: 'shop_extension',  title: 'Shop Extensions' },
-      { id: 'transit_shelter', title: 'Transit Shelters' },
-      { id: 'security_cabin',  title: 'Security Cabins' },
-      { id: 'walkway',         title: 'Walkways / Corridors' },
+
+  // 3.2 Commercial Use Cases
+  uc_commercial: {
+    title: 'Commercial',
+    brands: [
+      { id: 'shop_extensions',    title: 'Shop Extensions' },
+      { id: 'transit_shelters',   title: 'Transit Shelters' },
+      { id: 'security_cabins',    title: 'Security Cabins' },
+      { id: 'walkways_corridors', title: 'Walkways / Corridors' },
     ],
+    thickness: [],
   },
-  industrial: {
-    title: '3.3 Industrial / Agricultural',
-    items: [
-      { id: 'car_parking', title: 'Car Parking / Vehicle Shed' },
-      { id: 'cattle_shed', title: 'Cattle Shed & Poultry Farms' },
-      { id: 'godown',      title: 'Godown' },
+
+  // 3.3 Industrial / Agricultural Use Cases
+  uc_industrial_agri: {
+    title: 'Industrial / Agricultural',
+    brands: [
+      { id: 'car_parking_vehicle_shed',  title: 'Car Parking / Vehicle Shed' },
+      { id: 'cattle_shed_poultry_farms', title: 'Cattle Shed & Poultry Farms' },
+      { id: 'godown',                    title: 'Godown' },
     ],
+    thickness: [],
   },
 };
 
@@ -191,7 +196,7 @@ const USE_CASES = {
 // SEND FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
 
-// Step 1: Main Category Menu (Roofing / Structural / Use Cases)
+// Step 1: Main Category Menu
 const sendMainCategoryMenu = async (phone) => {
   await sendListMenu(
     phone,
@@ -222,7 +227,7 @@ const sendSubCategoryMenu = async (phone, mainCatId) => {
   );
 };
 
-// Step 3a: Brand Menu
+// Step 3a: Brand Menu (works for both products AND use cases)
 const sendBrandMenu = async (phone, subCatId) => {
   const product = PRODUCTS[subCatId];
   if (!product) return;
@@ -281,14 +286,6 @@ const handleMainCategorySelection = async (phone, mainCatId) => {
   lead.mainCategory = mainCatId;
   lead.currentStage = 'sub_category';
   await lead.save();
-
-  // Use Cases → show info, not quote form
-  if (mainCatId === 'use_cases') {
-    await sendSubCategoryMenu(phone, mainCatId);
-    return 'use_case_browse';
-  }
-
-  await sendSubCategoryMenu(phone, mainCatId);
 };
 
 // Handle Sub-category Selection
@@ -296,28 +293,6 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
-  // Use Case selected → show info only
-  if (USE_CASES[subCatId]) {
-    const uc = USE_CASES[subCatId];
-    const { sendText, sendButtons } = require('../utils/whatsapp');
-    await sendText(phone,
-      `🏗️ *${uc.title}*\n\n` +
-      uc.items.map(i => `• ${i}`).join('\n') +
-      `\n\nWe supply the right materials for all these applications!`
-    );
-    await sendButtons(phone,
-      `Would you like to request a quote for your project?`,
-      [
-        { id: 'quote_request',  title: '📋 Request Quote' },
-        { id: 'main_menu',      title: '🔙 Main Menu' },
-      ]
-    );
-    lead.currentStage = 'use_case_action';
-    await lead.save();
-    return;
-  }
-
-  // Product sub-category selected → go to brand
   lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
   lead.currentStage = 'quote_form';
@@ -346,5 +321,4 @@ module.exports = {
   // Data
   PRODUCTS,
   SUB_CATEGORIES,
-  USE_CASES,
 };
