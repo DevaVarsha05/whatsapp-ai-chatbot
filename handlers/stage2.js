@@ -302,7 +302,7 @@ const handleSubCategorySelection = async (phone, subCatId) => {
     const { sendText, sendButtons } = require('../utils/whatsapp');
     await sendText(phone,
       `🏗️ *${uc.title}*\n\n` +
-      uc.items.map(i => `• ${i}`).join('\n') +
+      uc.items.map(i => `• ${i.title}`).join('\n')  +
       `\n\nWe supply the right materials for all these applications!`
     );
     await sendButtons(phone,
