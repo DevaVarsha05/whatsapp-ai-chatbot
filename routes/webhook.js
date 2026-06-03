@@ -2,14 +2,13 @@ const express = require('express');
 const router  = express.Router();
 
 const Lead = require('../models/lead');
-const { handleGreeting } = require('../handlers/stage1');
+const { handleGreeting }                  = require('../handlers/stage1');
 const {
   sendMainCategoryMenu,
-  sendSubCategoryMenu,
   handleMainCategorySelection,
-  handleSubCategorySelection,
+  handleItemSelection,
 } = require('../handlers/stage2');
-const { handleQuoteFormAnswer } = require('../handlers/stage3');
+const { handleQuoteFormAnswer }           = require('../handlers/stage3');
 const {
   sendCatalogMenu,
   handleCatalogProductSelect,
@@ -49,9 +48,9 @@ router.post('/', async (req, res) => {
     const msgType = message.type;
 
     console.log(`📨 Message from ${phone} (${name}): type=${msgType}`);
-    
+
     let lead = await Lead.findOne({ phone });
-    console.log(`📌 Current stage: ${lead?.currentStage}`);
+
     const isGreetWord =
       msgType === 'text' &&
       ['hi', 'hello', 'hey', 'menu', 'start',
@@ -65,33 +64,27 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    // ── MAIN CATEGORY ─────────────────────────────────────────────
+    // ── MAIN CATEGORY: Roofing / Structural / Use Cases ───────────
     if (lead.currentStage === 'main_category') {
-  if (msgType !== 'interactive') {
-    const text = message.text?.body?.trim();
-    if (text) {
-      lead.messages.push({ role: 'user', content: text });
-      const aiReply = await handleAIMessage(phone, text, lead.messages);
-      if (aiReply) lead.messages.push(aiReply);
-      await lead.save();
-    }
-    return;
-  }
-  const listId = message.interactive?.list_reply?.id;
-  if (!listId) return;
-  await handleMainCategorySelection(phone, listId);
-  return;
-}
-
-    // ── SUB CATEGORY ──────────────────────────────────────────────
-    if (lead.currentStage === 'sub_category') {
       if (msgType !== 'interactive') {
-        await sendSubCategoryMenu(phone, lead.mainCategory);
+        await sendMainCategoryMenu(phone);
         return;
       }
       const listId = message.interactive?.list_reply?.id;
       if (!listId) return;
-      await handleSubCategorySelection(phone, listId);
+      await handleMainCategorySelection(phone, listId);
+      return;
+    }
+
+    // ── PRODUCT SELECTED: full nested list shown, customer picks item ──
+    if (lead.currentStage === 'product_selected') {
+      if (msgType !== 'interactive') {
+        await sendMainCategoryMenu(phone);
+        return;
+      }
+      const listId = message.interactive?.list_reply?.id;
+      if (!listId) return;
+      await handleItemSelection(phone, listId);
       return;
     }
 
@@ -114,27 +107,16 @@ router.post('/', async (req, res) => {
     }
 
     // ── QUOTE FORM ────────────────────────────────────────────────
-   if (lead.currentStage === 'quote_form') {
-  if (msgType === 'interactive') {
-    const listId = message.interactive?.list_reply?.id;
-    if (listId) await handleQuoteFormAnswer(phone, listId, true);
-  } else if (msgType === 'text') {
-    const text = message.text?.body?.trim();
-    if (!text) return;
-    // pincode step-ல மட்டும் handleQuoteFormAnswer
-    if (lead.quoteStep === 'pincode') {
-      await handleQuoteFormAnswer(phone, text, false);
-    } else {
-      // Random text → AI answer with quote context
-      const contextMsg = `[Note: Customer is currently filling a quote form for "${lead.productType}". Answer their product question briefly, then politely remind them to continue selecting from the menu options above to complete their quote.]`;
-      lead.messages.push({ role: 'user', content: text });
-      const aiReply = await handleAIMessage(phone, text, lead.messages, contextMsg);
-      if (aiReply) lead.messages.push(aiReply);
-      await lead.save();
+    if (lead.currentStage === 'quote_form') {
+      if (msgType === 'interactive') {
+        const listId = message.interactive?.list_reply?.id;
+        if (listId) await handleQuoteFormAnswer(phone, listId, true);
+      } else if (msgType === 'text') {
+        const text = message.text?.body?.trim();
+        if (text) await handleQuoteFormAnswer(phone, text, false);
+      }
+      return;
     }
-  }
-  return;
-}
 
     // ── CATALOG BROWSE ────────────────────────────────────────────
     if (lead.currentStage === 'catalog_browse') {
@@ -207,8 +189,6 @@ router.post('/', async (req, res) => {
     console.error('❌ Webhook error:', err.message);
     console.error('❌ Error details:', err.response?.data);
   }
-
-  
 });
 
 module.exports = router;
