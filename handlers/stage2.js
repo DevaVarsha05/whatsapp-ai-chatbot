@@ -1,39 +1,7 @@
 const Lead = require('../models/lead');
-const { sendListMenu, sendButtons } = require('../utils/whatsapp');
+const { sendListMenu, sendText } = require('../utils/whatsapp');
 
-// ─────────────────────────────────────────────────────────────────
-// PRODUCT HIERARCHY
-// ─────────────────────────────────────────────────────────────────
-
-const MAIN_CATEGORIES = [
-  { id: 'roofing_products',       title: '🏠 Roofing Products',         description: 'Sheets, Accessories, Fibre Boards' },
-  { id: 'structural_fastening',   title: '🔩 Structural & Fastening',   description: 'Steel, Pipes, Cement, Fasteners' },
-  { id: 'use_cases',              title: '🏗️ Use Cases',                description: 'Residential, Commercial, Industrial' },
-];
-
-// ── Sub-categories per main category ─────────────────────────────
-const SUB_CATEGORIES = {
-  roofing_products: [
-    { id: 'roofing_sheets',   title: '1.1 Roofing Sheets',        description: 'JSW Everglow, Colouron+, Pragati+...' },
-    { id: 'roofing_acc',      title: '1.2 Roofing Accessories',   description: 'L Corner, Gutter, Ridge...' },
-    { id: 'fibre_boards',     title: '1.3 Fibre Cement Boards',   description: 'Everest Standard, HD Board' },
-  ],
-  structural_fastening: [
-    { id: 'structural_steel', title: '2.1 Structural Steel',      description: 'TMT Bars - ARS550D' },
-    { id: 'pipes',            title: '2.2 Pipes',                 description: 'MS Pipes, GP Pipes' },
-    { id: 'cement',           title: '2.3 Cement',                description: 'Dalmia Cement' },
-    { id: 'fasteners',        title: '2.4 Fasteners & Fittings',  description: 'TATA Screws, Louvers, Thoovanam...' },
-  ],
-  use_cases: [
-    { id: 'residential',      title: '3.1 Residential',           description: 'House Terraces, Balcony, Frontage' },
-    { id: 'commercial',       title: '3.2 Commercial',            description: 'Shop Extensions, Transit Shelters...' },
-    { id: 'industrial',       title: '3.3 Industrial / Agricultural', description: 'Car Parking, Cattle Shed, Godown' },
-  ],
-};
-
-// ── Product details (brands + thickness) per sub-category ────────
 const PRODUCTS = {
-  // 1.1 Roofing Sheets
   roofing_sheets: {
     title: 'Roofing Sheets',
     brands: [
@@ -60,8 +28,6 @@ const PRODUCTS = {
       { id: '0.60mm', title: '0.60mm' },
     ],
   },
-
-  // 1.2 Roofing Accessories
   roofing_acc: {
     title: 'Roofing Accessories',
     brands: [
@@ -81,8 +47,6 @@ const PRODUCTS = {
       { id: '0.60mm', title: '0.60mm' },
     ],
   },
-
-  // 1.3 Fibre Cement Boards
   fibre_boards: {
     title: 'Fibre Cement Boards',
     brands: [
@@ -95,8 +59,6 @@ const PRODUCTS = {
       { id: '10mm', title: '10mm' },
     ],
   },
-
-  // 2.1 Structural Steel
   structural_steel: {
     title: 'Structural Steel (TMT Bars)',
     brands: [
@@ -110,8 +72,6 @@ const PRODUCTS = {
       { id: '20mm', title: '20mm' },
     ],
   },
-
-  // 2.2 Pipes
   pipes: {
     title: 'Steel Pipes',
     brands: [
@@ -128,17 +88,13 @@ const PRODUCTS = {
       { id: '4mm',   title: '4mm' },
     ],
   },
-
-  // 2.3 Cement
   cement: {
     title: 'Cement',
     brands: [
       { id: 'dalmia', title: 'Dalmia Cement' },
     ],
-    thickness: [], // No thickness for cement
+    thickness: [],
   },
-
-  // 2.4 Fasteners & Fittings
   fasteners: {
     title: 'Fasteners & Fittings',
     brands: [
@@ -158,170 +114,214 @@ const PRODUCTS = {
   },
 };
 
-// ── Use Case Details (no brand/thickness — info only) ─────────────
-const USE_CASES = {
-  residential: {
-    title: 'Residential',
-    items: ['House Terraces', 'Balcony & Window Extensions', 'Frontage / Backyard Area'],
-  },
-  commercial: {
-    title: 'Commercial',
-    items: ['Shop Extensions', 'Transit Shelters', 'Security Cabins', 'Walkways / Corridors'],
-  },
-  industrial: {
-    title: 'Industrial / Agricultural',
-    items: ['Car Parking / Vehicle Shed', 'Cattle Shed & Poultry Farms', 'Godown'],
-  },
-};
-
-// ─────────────────────────────────────────────────────────────────
-// SEND FUNCTIONS
-// ─────────────────────────────────────────────────────────────────
-
-// Step 1: Main Category Menu (Roofing / Structural / Use Cases)
+// ── Main Menu — single dropdown with all products ─────────────────
 const sendMainCategoryMenu = async (phone) => {
   await sendListMenu(
     phone,
-    `Please select a *Product Category*:`,
-    'Select Category',
-    [{
-      title: 'Our Categories',
-      rows: MAIN_CATEGORIES,
-    }]
+    `Please select a *Product*:`,
+    'Select Product',
+    [
+      {
+        title: '🏠 Roofing Products',
+        rows: [
+          { id: 'roofing_sheets',   title: '1.1 Roofing Sheets',      description: 'JSW Everglow, Colouron+...' },
+          { id: 'roofing_acc',      title: '1.2 Roofing Accessories',  description: 'L Corner, Gutter, Ridge...' },
+          { id: 'fibre_boards',     title: '1.3 Fibre Cement Boards',  description: 'Everest Standard, HD Board' },
+        ],
+      },
+      {
+        title: '🔩 Structural & Fastening',
+        rows: [
+          { id: 'structural_steel', title: '2.1 Structural Steel',     description: 'TMT Bars - ARS550D' },
+          { id: 'pipes',            title: '2.2 Pipes',                description: 'MS Pipes, GP Pipes' },
+          { id: 'cement',           title: '2.3 Cement',               description: 'Dalmia Cement' },
+          { id: 'fasteners',        title: '2.4 Fasteners & Fittings', description: 'TATA Screws, Louvers...' },
+        ],
+      },
+      {
+        title: '🏗️ Use Cases',
+        rows: [
+          { id: 'use_cases', title: '🏗️ Use Cases', description: 'Residential, Commercial, Industrial' },
+        ],
+      },
+    ]
   );
 };
 
-// Step 2: Sub-category Menu
-const sendSubCategoryMenu = async (phone, mainCatId) => {
-  const subs = SUB_CATEGORIES[mainCatId];
-  if (!subs) return;
-
-  const label = MAIN_CATEGORIES.find(c => c.id === mainCatId)?.title || 'Products';
-
+// ── Use Case Sub Menu ─────────────────────────────────────────────
+const sendUseCaseMenu = async (phone) => {
   await sendListMenu(
     phone,
-    `Please select a *Sub-Category* under ${label}:`,
-    'Select Sub-Category',
+    `Please select a *Use Case*:`,
+    'Select Use Case',
+    [
+      {
+        title: '🏗️ Use Cases',
+        rows: [
+          { id: 'uc_residential', title: '3.1 Residential',  description: 'House Terraces, Balcony...' },
+          { id: 'uc_commercial',  title: '3.2 Commercial',   description: 'Shops, Shelters, Cabins...' },
+          { id: 'uc_industrial',  title: '3.3 Industrial',   description: 'Parking, Sheds, Godown' },
+        ],
+      },
+    ]
+  );
+};
+
+// ── Residential Sub Menu ──────────────────────────────────────────
+const sendResidentialMenu = async (phone) => {
+  await sendListMenu(
+    phone,
+    `Please select a *Residential* use case:`,
+    'Select',
     [{
-      title: label,
-      rows: subs,
+      title: '3.1 Residential',
+      rows: [
+        { id: 'uc_house_terrace', title: 'House Terraces',              description: 'Roofing for house' },
+        { id: 'uc_balcony',       title: 'Balcony & Window Extensions', description: 'Balcony cover' },
+        { id: 'uc_frontage',      title: 'Frontage / Backyard Area',    description: 'Front/back yard' },
+      ],
     }]
   );
 };
 
-// Step 3a: Brand Menu
+// ── Commercial Sub Menu ───────────────────────────────────────────
+const sendCommercialMenu = async (phone) => {
+  await sendListMenu(
+    phone,
+    `Please select a *Commercial* use case:`,
+    'Select',
+    [{
+      title: '3.2 Commercial',
+      rows: [
+        { id: 'uc_shop',    title: 'Shop Extensions',    description: 'Shop cover' },
+        { id: 'uc_transit', title: 'Transit Shelters',   description: 'Bus/auto stand' },
+        { id: 'uc_cabin',   title: 'Security Cabins',    description: 'Security cabin' },
+        { id: 'uc_walkway', title: 'Walkways/Corridors', description: 'Covered walkway' },
+      ],
+    }]
+  );
+};
+
+// ── Industrial Sub Menu ───────────────────────────────────────────
+const sendIndustrialMenu = async (phone) => {
+  await sendListMenu(
+    phone,
+    `Please select an *Industrial* use case:`,
+    'Select',
+    [{
+      title: '3.3 Industrial',
+      rows: [
+        { id: 'uc_parking', title: 'Car Parking / Vehicle Shed', description: 'Vehicle shed' },
+        { id: 'uc_cattle',  title: 'Cattle Shed & Poultry',      description: 'Farm shed' },
+        { id: 'uc_godown',  title: 'Godown',                     description: 'Storage godown' },
+      ],
+    }]
+  );
+};
+
+// ── Handle all selections ─────────────────────────────────────────
+const handleMainCategorySelection = async (phone, selectedId) => {
+  const lead = await Lead.findOne({ phone });
+  if (!lead) return;
+
+  // Use Cases main → show sub list
+  if (selectedId === 'use_cases') {
+    lead.currentStage = 'use_case_browse';
+    await lead.save();
+    await sendUseCaseMenu(phone);
+    return;
+  }
+
+  // Residential → show items
+  if (selectedId === 'uc_residential') {
+    lead.currentStage = 'use_case_browse';
+    await lead.save();
+    await sendResidentialMenu(phone);
+    return;
+  }
+
+  // Commercial → show items
+  if (selectedId === 'uc_commercial') {
+    lead.currentStage = 'use_case_browse';
+    await lead.save();
+    await sendCommercialMenu(phone);
+    return;
+  }
+
+  // Industrial → show items
+  if (selectedId === 'uc_industrial') {
+    lead.currentStage = 'use_case_browse';
+    await lead.save();
+    await sendIndustrialMenu(phone);
+    return;
+  }
+
+  // Any use case item → unavailable message
+  if (selectedId.startsWith('uc_')) {
+    await sendText(phone,
+      `⚠️ Still waiting for the product update from the customer.\nWill update once received; currently unavailable.`
+    );
+    await sendMainCategoryMenu(phone);
+    return;
+  }
+
+  // Product selected → go to brand
+  lead.productType  = selectedId;
+  lead.quoteStep    = 'brand';
+  lead.currentStage = 'quote_form';
+  await lead.save();
+  await sendBrandMenu(phone, selectedId);
+};
+
+// ── Brand Menu ────────────────────────────────────────────────────
 const sendBrandMenu = async (phone, subCatId) => {
   const product = PRODUCTS[subCatId];
   if (!product) return;
-
   await sendListMenu(
     phone,
     `Please select *Brand / Type* for ${product.title}:`,
     'Select Brand',
-    [{
-      title: product.title,
-      rows: product.brands,
-    }]
+    [{ title: product.title, rows: product.brands }]
   );
 };
 
-// Step 3b: Sheet Type Menu (only for roofing_sheets)
+// ── Sheet Type Menu ───────────────────────────────────────────────
 const sendSheetTypeMenu = async (phone) => {
   const product = PRODUCTS['roofing_sheets'];
   await sendListMenu(
     phone,
-    `Please select *Sheet Type (Profile)*:`,
+    `Please select *Sheet Type*:`,
     'Select Type',
-    [{
-      title: 'Sheet Types',
-      rows: product.sheetTypes,
-    }]
+    [{ title: 'Sheet Types', rows: product.sheetTypes }]
   );
 };
 
-// Step 4: Thickness / Size Menu
+// ── Thickness Menu ────────────────────────────────────────────────
 const sendThicknessMenu = async (phone, subCatId) => {
   const product = PRODUCTS[subCatId];
   if (!product) return;
   if (product.thickness.length === 0) return 'skip_thickness';
-
   await sendListMenu(
     phone,
     `Please select *Size / Thickness*:`,
     'Select Size',
-    [{
-      title: 'Available Sizes',
-      rows: product.thickness,
-    }]
+    [{ title: 'Available Sizes', rows: product.thickness }]
   );
 };
 
-// ─────────────────────────────────────────────────────────────────
-// HANDLERS
-// ─────────────────────────────────────────────────────────────────
+// Legacy aliases
+const sendSubCategoryMenu = sendMainCategoryMenu;
+const handleSubCategorySelection = handleMainCategorySelection;
+const handleProductSelection = handleMainCategorySelection;
 
-// Handle Main Category Selection
-const handleMainCategorySelection = async (phone, mainCatId) => {
-  const lead = await Lead.findOne({ phone });
-  if (!lead) return;
-
-  lead.mainCategory = mainCatId;
-  lead.currentStage = 'product_selected';
-  await lead.save();
-
-  // Use Cases → show info, not quote form
-  if (mainCatId === 'use_cases') {
-    await sendSubCategoryMenu(phone, mainCatId);
-    return 'use_case_browse';
-  }
-
-  await sendSubCategoryMenu(phone, mainCatId);
-};
-
-// Handle Sub-category Selection
-const handleSubCategorySelection = async (phone, subCatId) => {
-  const lead = await Lead.findOne({ phone });
-  if (!lead) return;
- 
-  // FIX 3: Use Case selected → not available message
-  if (USE_CASES[subCatId]) {
-    await sendText(phone,
-      `⚠️ Still waiting for the product update from the customer.\nWill update once received; currently unavailable.`
-    );
-    lead.currentStage = 'main_category';
-    await lead.save();
-    await sendMainCategoryMenu(phone);
-    return;
-  }
- 
-  // Product sub-category selected → go to brand
-  lead.productType  = subCatId;
-  lead.quoteStep    = 'brand';
-  lead.currentStage = 'quote_form';
-  await lead.save();
-
-  await sendBrandMenu(phone, subCatId);
-};
-
-// Handle Product Selection (legacy alias — keeps stage2 backward compatible)
-const handleProductSelection = async (phone, productId) => {
-  return handleSubCategorySelection(phone, productId);
-};
-
-// ─────────────────────────────────────────────────────────────────
 module.exports = {
-  // Send helpers
   sendMainCategoryMenu,
   sendSubCategoryMenu,
   sendBrandMenu,
   sendSheetTypeMenu,
   sendThicknessMenu,
-  // Handlers
   handleMainCategorySelection,
   handleSubCategorySelection,
-  handleProductSelection,   // backward compat
-  // Data
+  handleProductSelection,
   PRODUCTS,
-  SUB_CATEGORIES,
-  USE_CASES,
 };
