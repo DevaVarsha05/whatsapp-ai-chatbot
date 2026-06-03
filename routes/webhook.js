@@ -100,24 +100,29 @@ router.post('/', async (req, res) => {
 
     // >>> EXACT AH INGE INTHA CODE-AH COPY PASTE PANNUNGA <<<
     // ── USE CASE ITEMS ────────────────────────────────────────────
+   // ── USE CASE ITEMS ────────────────────────────────────────────
     if (lead.currentStage === 'use_case_items') {
-      if (msgType !== 'interactive') {
-        await sendBrandMenu(phone, lead.productType); 
+      // User list-la irundhu item-ah click panna intha block-kulla varum
+      if (msgType === 'interactive') {
+        const listId = message.interactive?.list_reply?.id;
+        if (!listId) return;
+        
+        // >>> BUTTON CLICK PANNA INGE MESSAGE SENT AAGUM <<<
+        await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
+
+        // Stage-ah thirumba main menu-ku mathuroam
+        lead.currentStage = 'main_category';
+        lead.quoteStep    = '';
+        await lead.save();
+
+        // Main menu-va thirumba user-ku katuroam
+        await sendMainCategoryMenu(phone);
         return;
       }
-      const listId = message.interactive?.list_reply?.id;
-      if (!listId) return;
-      
-      // Direct ah inge message send panrom
-      await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
 
-      // Stage-ah thirumba main menu-ku mathuroam
-      lead.currentStage = 'main_category';
-      lead.quoteStep    = '';
-      await lead.save();
-
-      // Main menu-va thirumba user-ku katuroam
-      await sendMainCategoryMenu(phone);
+      // User button click pannama, normal-ah text message ethana types pannuna...
+      // safe-ah thirumba items menu-vaye recall panrom.
+      await sendBrandMenu(phone, lead.productType); 
       return;
     }
 
