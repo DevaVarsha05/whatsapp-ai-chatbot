@@ -5,9 +5,8 @@ const Lead = require('../models/lead');
 const { handleGreeting } = require('../handlers/stage1');
 const {
   sendMainCategoryMenu,
-  sendSubCategoryMenu,
   handleMainCategorySelection,
-  handleSubCategorySelection,
+  handleItemSelection,
 } = require('../handlers/stage2');
 const { handleQuoteFormAnswer } = require('../handlers/stage3');
 const {

@@ -266,7 +266,7 @@ const handleMainCategorySelection = async (phone, mainCatId) => {
   if (!lead) return;
 
   lead.mainCategory = mainCatId;
-  lead.currentStage = 'sub_category';
+  lead.currentStage = 'product_selected';
   await lead.save();
 
   // Use Cases → show info, not quote form
@@ -285,24 +285,15 @@ const handleSubCategorySelection = async (phone, subCatId) => {
 
   // Use Case selected → show info only
   if (USE_CASES[subCatId]) {
-    const uc = USE_CASES[subCatId];
-    const { sendText, sendButtons } = require('../utils/whatsapp');
-    await sendText(phone,
-      `🏗️ *${uc.title}*\n\n` +
-      uc.items.map(i => `• ${i}`).join('\n') +
-      `\n\nWe supply the right materials for all these applications!`
-    );
-    await sendButtons(phone,
-      `Would you like to request a quote for your project?`,
-      [
-        { id: 'quote_request',  title: '📋 Request Quote' },
-        { id: 'main_menu',      title: '🔙 Main Menu' },
-      ]
-    );
-    lead.currentStage = 'use_case_action';
-    await lead.save();
-    return;
-  }
+  const { sendText } = require('../utils/whatsapp');
+  await sendText(phone,
+   `⚠️ Still waiting for the product update from the customer.\nWill update once received; currently unavailable.`
+  );
+  lead.currentStage = 'main_category';
+  await lead.save();
+  await sendMainCategoryMenu(phone);
+  return;
+}
 
   // Product sub-category selected → go to brand
   lead.productType  = subCatId;
