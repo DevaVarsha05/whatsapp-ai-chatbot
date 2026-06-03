@@ -8,7 +8,7 @@ const {
   sendSubCategoryMenu,
   handleMainCategorySelection,
   handleSubCategorySelection,
-  handleUseCaseItemSelection,
+  handleUseCaseItemSelection, 
 } = require('../handlers/stage2');
 const { handleQuoteFormAnswer } = require('../handlers/stage3');
 const {
@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
       ['hi', 'hello', 'hey', 'menu', 'start',
        'shiva', 'shiva steel', 'sivabalaaji', 'siva', 'steel'].includes(
         message.text?.body?.trim().toLowerCase()
-      ) 
+      );
 
     // ── New or Greet → direct to main category ────────────────────
     if (!lead || isGreetWord) {
@@ -96,14 +96,21 @@ router.post('/', async (req, res) => {
       return;
     }
 
-   if (lead.currentStage === 'use_case_item') {
-      if (msgType !== 'interactive') {
-        await sendSubCategoryMenu(phone, lead.useCaseType);
-        return;
+    // ── USE CASE ACTION ───────────────────────────────────────────
+    if (lead.currentStage === 'use_case_action') {
+      if (msgType !== 'interactive') return;
+      const buttonId = message.interactive?.button_reply?.id;
+      if (!buttonId) return;
+
+      if (buttonId === 'quote_request') {
+        lead.currentStage = 'main_category';
+        await lead.save();
+        await sendMainCategoryMenu(phone);
+      } else if (buttonId === 'main_menu') {
+        lead.currentStage = 'main_category';
+        await lead.save();
+        await sendMainCategoryMenu(phone);
       }
-      const listId = message.interactive?.list_reply?.id;
-      if (!listId) return;
-      await handleUseCaseItemSelection(phone, listId);
       return;
     }
 
