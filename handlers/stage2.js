@@ -14,20 +14,20 @@ const MAIN_CATEGORIES = [
 // ── Sub-categories per main category ─────────────────────────────
 const SUB_CATEGORIES = {
   roofing_products: [
-    { id: 'roofing_sheets',   title: '1.1 Roofing Sheets',        description: 'JSW Everglow, Colouron+, Pragati+...' },
-    { id: 'roofing_acc',      title: '1.2 Roofing Accessories',   description: 'L Corner, Gutter, Ridge...' },
-    { id: 'fibre_boards',     title: '1.3 Fibre Cement Boards',   description: 'Everest Standard, HD Board' },
+    { id: 'roofing_sheets',   title: ' Roofing Sheets',        description: 'JSW Everglow, Colouron+, Pragati+...' },
+    { id: 'roofing_acc',      title: ' Roofing Accessories',   description: 'L Corner, Gutter, Ridge...' },
+    { id: 'fibre_boards',     title: ' Fibre Cement Boards',   description: 'Everest Standard, HD Board' },
   ],
   structural_fastening: [
-    { id: 'structural_steel', title: '2.1 Structural Steel',      description: 'TMT Bars - ARS550D' },
-    { id: 'pipes',            title: '2.2 Pipes',                 description: 'MS Pipes, GP Pipes' },
-    { id: 'cement',           title: '2.3 Cement',                description: 'Dalmia Cement' },
-    { id: 'fasteners',        title: '2.4 Fasteners & Fittings',  description: 'TATA Screws, Louvers, Thoovanam...' },
+    { id: 'structural_steel', title: ' Structural Steel',      description: 'TMT Bars - ARS550D' },
+    { id: 'pipes',            title: 'Pipes',                 description: 'MS Pipes, GP Pipes' },
+    { id: 'cement',           title: ' Cement',                description: 'Dalmia Cement' },
+    { id: 'fasteners',        title: ' Fasteners & Fittings',  description: 'TATA Screws, Louvers, Thoovanam...' },
   ],
   use_cases: [
-    { id: 'residential',      title: '3.1 Residential',           description: 'House Terraces, Balcony, Frontage' },
-    { id: 'commercial',       title: '3.2 Commercial',            description: 'Shop Extensions, Transit Shelters...' },
-    { id: 'industrial',       title: '3.3 Industrial / Agricultural', description: 'Car Parking, Cattle Shed, Godown' },
+    { id: 'residential',      title: ' Residential',           description: 'House Terraces, Balcony, Frontage' },
+    { id: 'commercial',       title: 'Commercial',            description: 'Shop Extensions, Transit Shelters...' },
+    { id: 'industrial',       title: 'Industrial / Agricultural', description: 'Car Parking, Cattle Shed, Godown' },
   ],
 };
 
