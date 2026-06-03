@@ -2,13 +2,15 @@ const express = require('express');
 const router  = express.Router();
 
 const Lead = require('../models/lead');
-const { handleGreeting }                  = require('../handlers/stage1');
+const { handleGreeting } = require('../handlers/stage1');
 const {
   sendMainCategoryMenu,
+  sendSubCategoryMenu,
   handleMainCategorySelection,
-  handleItemSelection,
+  handleSubCategorySelection,
+  handleUseCaseItemSelection,
 } = require('../handlers/stage2');
-const { handleQuoteFormAnswer }           = require('../handlers/stage3');
+const { handleQuoteFormAnswer } = require('../handlers/stage3');
 const {
   sendCatalogMenu,
   handleCatalogProductSelect,
@@ -48,9 +50,9 @@ router.post('/', async (req, res) => {
     const msgType = message.type;
 
     console.log(`📨 Message from ${phone} (${name}): type=${msgType}`);
-
+    
     let lead = await Lead.findOne({ phone });
-
+    console.log(`📌 Current stage: ${lead?.currentStage}`);
     const isGreetWord =
       msgType === 'text' &&
       ['hi', 'hello', 'hey', 'menu', 'start',
@@ -64,27 +66,33 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    // ── MAIN CATEGORY: Roofing / Structural / Use Cases ───────────
+    // ── MAIN CATEGORY ─────────────────────────────────────────────
     if (lead.currentStage === 'main_category') {
-      if (msgType !== 'interactive') {
-        await sendMainCategoryMenu(phone);
-        return;
-      }
-      const listId = message.interactive?.list_reply?.id;
-      if (!listId) return;
-      await handleMainCategorySelection(phone, listId);
-      return;
+  if (msgType !== 'interactive') {
+    const text = message.text?.body?.trim();
+    if (text) {
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
     }
+    return;
+  }
+  const listId = message.interactive?.list_reply?.id;
+  if (!listId) return;
+  await handleMainCategorySelection(phone, listId);
+  return;
+}
 
-    // ── PRODUCT SELECTED: full nested list shown, customer picks item ──
-    if (lead.currentStage === 'product_selected') {
+    // ── SUB CATEGORY ──────────────────────────────────────────────
+    if (lead.currentStage === 'sub_category') {
       if (msgType !== 'interactive') {
-        await sendMainCategoryMenu(phone);
+        await sendSubCategoryMenu(phone, lead.mainCategory);
         return;
       }
       const listId = message.interactive?.list_reply?.id;
       if (!listId) return;
-      await handleItemSelection(phone, listId);
+      await handleSubCategorySelection(phone, listId);
       return;
     }
 
@@ -107,16 +115,26 @@ router.post('/', async (req, res) => {
     }
 
     // ── QUOTE FORM ────────────────────────────────────────────────
-    if (lead.currentStage === 'quote_form') {
-      if (msgType === 'interactive') {
-        const listId = message.interactive?.list_reply?.id;
-        if (listId) await handleQuoteFormAnswer(phone, listId, true);
-      } else if (msgType === 'text') {
-        const text = message.text?.body?.trim();
-        if (text) await handleQuoteFormAnswer(phone, text, false);
-      }
-      return;
+   if (lead.currentStage === 'quote_form') {
+  if (msgType === 'interactive') {
+    const listId = message.interactive?.list_reply?.id;
+    if (listId) await handleQuoteFormAnswer(phone, listId, true);
+  } else if (msgType === 'text') {
+    const text = message.text?.body?.trim();
+    if (!text) return;
+    // pincode step-ல மட்டும் handleQuoteFormAnswer
+    if (lead.quoteStep === 'pincode') {
+      await handleQuoteFormAnswer(phone, text, false);
+    } else {
+      // மற்ற text-க்கு AI reply
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
     }
+  }
+  return;
+}
 
     // ── CATALOG BROWSE ────────────────────────────────────────────
     if (lead.currentStage === 'catalog_browse') {
@@ -189,6 +207,8 @@ router.post('/', async (req, res) => {
     console.error('❌ Webhook error:', err.message);
     console.error('❌ Error details:', err.response?.data);
   }
+
+  
 });
 
 module.exports = router;
