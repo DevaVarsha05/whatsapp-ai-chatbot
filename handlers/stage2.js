@@ -282,19 +282,18 @@ const handleMainCategorySelection = async (phone, mainCatId) => {
 const handleSubCategorySelection = async (phone, subCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
-
-  // Use Case selected → show info only
+ 
+  // FIX 3: Use Case selected → not available message
   if (USE_CASES[subCatId]) {
-  const { sendText } = require('../utils/whatsapp');
-  await sendText(phone,
-   `⚠️ Still waiting for the product update from the customer.\nWill update once received; currently unavailable.`
-  );
-  lead.currentStage = 'main_category';
-  await lead.save();
-  await sendMainCategoryMenu(phone);
-  return;
-}
-
+    await sendText(phone,
+      `⚠️ Still waiting for the product update from the customer.\nWill update once received; currently unavailable.`
+    );
+    lead.currentStage = 'main_category';
+    await lead.save();
+    await sendMainCategoryMenu(phone);
+    return;
+  }
+ 
   // Product sub-category selected → go to brand
   lead.productType  = subCatId;
   lead.quoteStep    = 'brand';
