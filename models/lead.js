@@ -1,31 +1,44 @@
 const mongoose = require('mongoose');
 
+// // // In-memory store
+// // const leads = {};
+
+// // const Lead = {
+// //   findOne: async ({ phone }) => leads[phone] || null,
+// //   prototype: {},
+// // };
+
+// // function LeadModel(data) {
+// //   Object.assign(this, data);
+// //   this.save = async () => { leads[this.phone] = this; };
+// // }
+
+// // LeadModel.findOne = async ({ phone }) => {
+// //   if (!leads[phone]) return null;
+// //   const obj = leads[phone];
+// //   obj.save = async () => { leads[phone] = obj; };
+// //   return obj;
+// // };
+
+// module.exports = LeadModel;
+
 const leadSchema = new mongoose.Schema({
   phone:        { type: String, required: true, unique: true },
   name:         { type: String, default: 'Customer' },
   currentStage: { type: String, default: 'greeting' },
-
-  // Stage 1
-  intent: String,
-
-  // Stage 2 — new hierarchy fields
-  mainCategory:      String,   // 'roofing_products' | 'structural_fastening' | 'use_cases'
-  
-  // Stage 3 — Quote form
-  productType:       String,   // sub-category id e.g. 'roofing_sheets', 'pipes'
-  quoteStep:         String,   // 'brand' | 'sheet_type' | 'thickness' | 'pincode' | 'done'
+ 
+  // Quote form
+  intent:            String,
+  productType:       String,
+  quoteStep:         String,
   selectedBrand:     String,
-  selectedSheetType: String,   // only for roofing_sheets
   selectedThickness: String,
   deliveryPincode:   String,
 
   // Catalog form
   catalogProduct:     String,
   catalogFormStep:    { type: Number, default: 0 },
-  catalogGrade:       String,
-  catalogDiameter:    String,
   catalogQuantity:    Number,
-  catalogBrand:       String,
   catalogPincode:     String,
   catalogCity:        String,
   catalogTimeline:    String,
@@ -33,8 +46,8 @@ const leadSchema = new mongoose.Schema({
   catalogCompany:     String,
   catalogProjectType: String,
 
-  // AI conversation history
-  messages: [
+
+   messages: [
     {
       role:    { type: String, enum: ['user', 'assistant'] },
       content: String,
