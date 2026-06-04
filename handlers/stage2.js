@@ -344,6 +344,20 @@ const handleUseCaseItemSelection = async (phone, itemId) => {
     phone,
     `✅ *${appName}*\n\nThank you for your interest in *${appName}*! 🙏\n\nWe need some data from the client side. Will update you as soon as we receive the information.`
   );
+  await sendButtons(
+    phone,
+    'Would you like to explore other products?',
+    [
+      { id: 'uc_view_products', title: 'Yes' },
+      { id: 'uc_no_thanks',     title: 'No Thanks' },
+    ]
+  );
+
+  const lead = await Lead.findOne({ phone });
+  if (lead) {
+    lead.currentStage = 'use_case_action';
+    await lead.save();
+  }
 };
 
 // Handle Product Selection (legacy alias — keeps stage2 backward compatible)

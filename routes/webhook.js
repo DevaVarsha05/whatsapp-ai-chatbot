@@ -106,15 +106,15 @@ router.post('/', async (req, res) => {
       const buttonId = message.interactive?.button_reply?.id;
       if (!buttonId) return;
 
-      if (buttonId === 'quote_request') {
+      if (buttonId === 'uc_view_products') {
         lead.currentStage = 'main_category';
         await lead.save();
         await sendMainCategoryMenu(phone);
-      } else if (buttonId === 'main_menu') {
-        lead.currentStage = 'main_category';
+      }  else if (buttonId === 'uc_no_thanks') {
+        await sendText(phone, 'Thank you! 🙏 Feel free to reach us anytime.');
+        lead.currentStage = 'completed';
         await lead.save();
-        await sendMainCategoryMenu(phone);
-      }
+        }
       return;
     }
 
