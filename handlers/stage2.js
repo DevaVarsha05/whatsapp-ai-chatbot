@@ -349,7 +349,7 @@ const handleUseCaseItemSelection = async (phone, itemId) => {
     'Would you like to explore other products?',
     [
       { id: 'uc_view_products', title: 'Yes' },
-      { id: 'uc_no_thanks',     title: 'No Thanks' },
+      { id: 'uc_no_thanks',     title: 'No ' },
     ]
   );
 
