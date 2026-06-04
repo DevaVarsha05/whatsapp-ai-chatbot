@@ -8,6 +8,7 @@ const {
   sendSubCategoryMenu,
   handleMainCategorySelection,
   handleSubCategorySelection,
+  handleUseCaseItemSelection,
 
 
 } = require('../handlers/stage2');
@@ -134,9 +135,15 @@ router.post('/', async (req, res) => {
     // ── QUOTE FORM ────────────────────────────────────────────────
    if (lead.currentStage === 'quote_form') {
   if (msgType === 'interactive') {
-    const listId = message.interactive?.list_reply?.id;
-    if (listId) await handleQuoteFormAnswer(phone, listId, true);
-  } else if (msgType === 'text') {
+  const listId = message.interactive?.list_reply?.id;
+  if (listId) {
+    if (APPLICATION_INFO[listId]) {
+      await handleUseCaseItemSelection(phone, listId);
+    } else {
+      await handleQuoteFormAnswer(phone, listId, true);
+    }
+  }
+} else if (msgType === 'text') {
     const text = message.text?.body?.trim();
     if (!text) return;
     // pincode step-ல மட்டும் handleQuoteFormAnswer

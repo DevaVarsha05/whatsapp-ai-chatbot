@@ -192,6 +192,19 @@ const PRODUCTS = {
 };
 
 const USE_CASE_IDS = ['uc_residential', 'uc_commercial', 'uc_industrial_agri'];
+
+const APPLICATION_INFO = {
+  house_terraces:            'House Terraces',
+  balcony_window_extensions: 'Balcony & Window Extensions',
+  frontage_backyard:         'Frontage / Backyard Area',
+  shop_extensions:           'Shop Extensions',
+  transit_shelters:          'Transit Shelters',
+  security_cabins:           'Security Cabins',
+  walkways_corridors:        'Walkways / Corridors',
+  car_parking_vehicle_shed:  'Car Parking / Vehicle Shed',
+  cattle_shed_poultry_farms: 'Cattle Shed & Poultry Farms',
+  godown:                    'Godown',
+};
 // ─────────────────────────────────────────────────────────────────
 // SEND FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
@@ -227,7 +240,14 @@ const sendSubCategoryMenu = async (phone, mainCatId) => {
     }]
   );
 };
+const handleUseCaseItemSelection = async (phone, itemId) => {
+  const appName = APPLICATION_INFO[itemId] || itemId;
 
+  await sendText(
+    phone,
+    `✅ *${appName}*\n\nThank you for your interest in *${appName}*! 🙏\n\nOur experts will reach out to you shortly with the best roofing solution for your needs.\n\n📞 For immediate assistance: *9876543210*`
+  );
+};
 // Step 3a: Brand Menu (works for both products AND use cases)
 const sendBrandMenu = async (phone, subCatId) => {
   const product = PRODUCTS[subCatId];
@@ -340,6 +360,7 @@ module.exports = {
   // Handlers
   handleMainCategorySelection,
   handleSubCategorySelection,
+  handleUseCaseItemSelection,
   handleProductSelection,   // backward compat
   // Data
   PRODUCTS,
