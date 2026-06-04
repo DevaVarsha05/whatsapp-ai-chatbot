@@ -309,6 +309,12 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   await sendBrandMenu(phone, subCatId);
   return;
 }
+
+  lead.productType  = subCatId;
+  lead.quoteStep    = 'brand';
+  lead.currentStage = 'quote_form';
+  await lead.save();
+  await sendBrandMenu(phone, subCatId);
 }
 
 // Handle Product Selection (legacy alias — keeps stage2 backward compatible)
