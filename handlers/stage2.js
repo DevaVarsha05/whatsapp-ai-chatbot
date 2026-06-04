@@ -240,14 +240,7 @@ const sendSubCategoryMenu = async (phone, mainCatId) => {
     }]
   );
 };
-const handleUseCaseItemSelection = async (phone, itemId) => {
-  const appName = APPLICATION_INFO[itemId] || itemId;
 
-  await sendText(
-    phone,
-    `✅ *${appName}*\n\nThank you for your interest in *${appName}*! 🙏\n\nOur experts will reach out to you shortly with the best roofing solution for your needs.\n\n📞 For immediate assistance: *9876543210*`
-  );
-};
 // Step 3a: Brand Menu (works for both products AND use cases)
 const sendBrandMenu = async (phone, subCatId) => {
   const product = PRODUCTS[subCatId];
@@ -342,6 +335,16 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   await lead.save();
   await sendBrandMenu(phone, subCatId);
 }
+
+
+const handleUseCaseItemSelection = async (phone, itemId) => {
+  const appName = APPLICATION_INFO[itemId] || itemId;
+
+  await sendText(
+    phone,
+    `✅ *${appName}*\n\nThank you for your interest in *${appName}*! 🙏\n\nWe need some data from the client side. Will update you as soon as we receive the information.`
+  );
+};
 
 // Handle Product Selection (legacy alias — keeps stage2 backward compatible)
 const handleProductSelection = async (phone, productId) => {

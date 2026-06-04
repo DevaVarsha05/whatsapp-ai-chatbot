@@ -99,21 +99,7 @@ router.post('/', async (req, res) => {
       return;
     }
 
-  if (lead.currentStage === 'quote_form') {
-      
-      // >>> DIRECT AH INTHA CHINNA CONDITION MATTUM SET PANNUNGA <<<
-      if (lead.productType && (lead.productType.includes('uc_') || lead.productType.includes('residential'))) {
-        await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
-        
-        lead.currentStage = 'main_category';
-        lead.quoteStep    = '';
-        await lead.save();
-
-        await sendMainCategoryMenu(phone);
-        return;
-      }
-
-    }
+ 
     // ── USE CASE ACTION ───────────────────────────────────────────
     if (lead.currentStage === 'use_case_action') {
       if (msgType !== 'interactive') return;
@@ -192,14 +178,14 @@ router.post('/', async (req, res) => {
     }
 
     // ── TRACKING ──────────────────────────────────────────────────
-    if (lead.currentStage === 'tracking') {
-      if (msgType === 'text') {
-        const orderId = message.text?.body?.trim();
-        await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
+    // if (lead.currentStage === 'tracking') {
+    //   if (msgType === 'text') {
+    //     const orderId = message.text?.body?.trim();
+    //     await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
       
-      }
-      return;
-    }
+    //   }
+    //   return;
+    // }
 
     
     // ── COMPLETED ─────────────────────────────────────────────────
