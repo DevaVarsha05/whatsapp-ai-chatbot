@@ -86,12 +86,11 @@ const handlePincode = async (phone, pincode) => {
     return;
   }
 
-  lead.deliveryPincode = pincode;
-  lead.currentStage    = 'completed';
-  lead.quoteStep       = 'done';
-  await lead.save();
-
-  await sendQuoteSummary(phone, lead);
+  // மாத்துங்க:
+lead.deliveryPincode = pincode;
+lead.quoteStep       = 'customer_name';
+await lead.save();
+await sendText(phone, '👤 Please enter your *Name*:');
 };
 
 // ── Quote Summary ─────────────────────────────────────────────────
@@ -111,10 +110,12 @@ const sendQuoteSummary = async (phone, lead) => {
 ✅ *Thank you! Your quote request has been received.*
 
 📋 *Quote Summary:*
-• Product   : ${product?.title || lead.productType}
-• Brand     : ${brandName}
+- Name      : ${lead.customerName || '-'}
+- Phone     : ${lead.customerPhone || '-'}
+- Product   : ${product?.title || lead.productType}
+- Brand     : ${brandName}
 ${sheetTypeLine}• Size      : ${sizeName}
-• Pincode   : ${lead.deliveryPincode}
+- Pincode   : ${lead.deliveryPincode}
 
 Our team will call you within *2 business hours*. 🤝
   `.trim();
@@ -141,7 +142,7 @@ const handleQuoteFormAnswer = async (phone, answer, isInteractive = false) => {
 
   const step = lead.quoteStep;
 
-  if (step === 'brand' && isInteractive) {
+   if (step === 'brand' && isInteractive) {
     await handleBrandSelection(phone, answer);
   } else if (step === 'sheet_type' && isInteractive) {
     await handleSheetTypeSelection(phone, answer);
@@ -149,6 +150,17 @@ const handleQuoteFormAnswer = async (phone, answer, isInteractive = false) => {
     await handleThicknessSelection(phone, answer);
   } else if (step === 'pincode' && !isInteractive) {
     await handlePincode(phone, answer);
+  } else if (step === 'customer_name' && !isInteractive) {  // ✅ add
+    lead.customerName = answer.trim();
+    lead.quoteStep    = 'customer_phone';
+    await lead.save();
+    await sendText(phone, '📞 Please enter your *Phone Number*:');
+  } else if (step === 'customer_phone' && !isInteractive) {  // ✅ add
+    lead.customerPhone = answer.trim();
+    lead.currentStage  = 'completed';
+    lead.quoteStep     = 'done';
+    await lead.save();
+    await sendQuoteSummary(phone, lead);
   }
 };
 

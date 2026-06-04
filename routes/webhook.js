@@ -133,7 +133,7 @@ router.post('/', async (req, res) => {
     const text = message.text?.body?.trim();
     if (!text) return;
     // pincode step-ல மட்டும் handleQuoteFormAnswer
-    if (lead.quoteStep === 'pincode') {
+      if (['pincode', 'customer_name', 'customer_phone'].includes(lead.quoteStep)) {
       await handleQuoteFormAnswer(phone, text, false);
     } else {
       // மற்ற text-க்கு AI reply
