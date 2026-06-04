@@ -9,7 +9,7 @@ const {
   handleMainCategorySelection,
   handleSubCategorySelection,
   handleUseCaseItemSelection,
-
+  APPLICATION_INFO,
 
 } = require('../handlers/stage2');
 const { handleQuoteFormAnswer } = require('../handlers/stage3');

@@ -365,6 +365,7 @@ module.exports = {
   handleSubCategorySelection,
   handleUseCaseItemSelection,
   handleProductSelection,   // backward compat
+  APPLICATION_INFO,
   // Data
   PRODUCTS,
   SUB_CATEGORIES,
