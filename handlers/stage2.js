@@ -190,6 +190,8 @@ const PRODUCTS = {
     thickness: [],
   },
 };
+
+const USE_CASE_IDS = ['uc_residential', 'uc_commercial', 'uc_industrial_agri'];
 // ─────────────────────────────────────────────────────────────────
 // SEND FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
@@ -231,10 +233,14 @@ const sendBrandMenu = async (phone, subCatId) => {
   const product = PRODUCTS[subCatId];
   if (!product) return;
 
+  const isUseCase = USE_CASE_IDS.includes(subCatId);
+
   await sendListMenu(
     phone,
-    `Please select *Brand / Type* for ${product.title}:`,
-    'Select Brand',
+    isUseCase
+      ? `Please select *Application* under ${product.title}:`
+      : `Please select *Brand / Type* for ${product.title}:`,
+    isUseCase ? 'Select Application' : 'Select Brand',
     [{
       title: product.title,
       rows: product.brands,
@@ -296,7 +302,7 @@ const handleSubCategorySelection = async (phone, subCatId) => {
   const lead = await Lead.findOne({ phone });
   if (!lead) return;
 
-  const USE_CASE_IDS = ['uc_residential', 'uc_commercial', 'uc_industrial_agri'];
+  
   if (USE_CASE_IDS.includes(subCatId)) {
   
  
