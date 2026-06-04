@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
         return;
       }
       const listId = message.interactive?.list_reply?.id;
-     console.log("🔥 WHATSAPP-LA IRUNDHU VANTHA EXACT ID:", listId);
+     
       if (!listId) return;
       await handleSubCategorySelection(phone, listId);
       return;
@@ -188,13 +188,13 @@ router.post('/', async (req, res) => {
     if (lead.currentStage === 'tracking') {
       if (msgType === 'text') {
         const orderId = message.text?.body?.trim();
-        await sendText(phone,
-          `🔍 Tracking Order: *${orderId}*\n\nOur team will update you shortly. For immediate help: 📞 9876543210`
-        );
+        await sendText(phone, '⚠️ *Coming Soon!*\nThis item is currently not available, we will update soon. Please explore our other products!');
+      
       }
       return;
     }
 
+    
     // ── COMPLETED ─────────────────────────────────────────────────
     if (lead.currentStage === 'completed') {
       if (msgType === 'text' && message.text?.body?.trim().toLowerCase() === 'yes') {

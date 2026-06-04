@@ -1,8 +1,6 @@
 const Lead = require('../models/lead');
 const { sendText,sendListMenu, sendButtons } = require('../utils/whatsapp');
-const sendListMessage = async (phone, payload) => {
-  await sendText(phone, payload);
-};
+
 // ─────────────────────────────────────────────────────────────────
 // PRODUCT HIERARCHY
 // ─────────────────────────────────────────────────────────────────
@@ -230,41 +228,18 @@ const sendSubCategoryMenu = async (phone, mainCatId) => {
 
 // Step 3a: Brand Menu (works for both products AND use cases)
 const sendBrandMenu = async (phone, subCatId) => {
-  const productData = PRODUCTS[subCatId];
-  if (!productData) return;
+  const product = PRODUCTS[subCatId];
+  if (!product) return;
 
-  const bodyText = (subCatId.includes('uc_') || subCatId.includes('residential'))
-    ? `Please select Use Case / Type for ${productData.title}:`
-    : `Please select Brand / Type for ${productData.title}:`;
-
-  const buttonLabel = (subCatId.includes('uc_') || subCatId.includes('residential'))
-    ? "Select Use Case"
-    : "Select Brand";
-
-  const rows = productData.brands.map(b => ({
-    id: b.id,
-    title: b.title.substring(0, 24),
-    description: b.desc ? b.desc.substring(0, 72) : ""
-  }));
-
-  const listMessage = {
-    type: "list",
-    header: { type: "text", text: "Options Available" },
-    body: { text: bodyText },
-    footer: { text: "Powered by Bot" },
-    action: {
-      button: buttonLabel,
-      sections: [
-        {
-          title: (subCatId.includes('uc_') || subCatId.includes('residential')) ? "Use Cases" : "Brands Available",
-          rows: rows
-        }
-      ]
-    }
-  };
-
-  // >>> INTHA KADAISI LINE-AH MATTUM CORRECT-AH PAATHU MATHUNGA <<<
-  await sendListMessage(phone, listMessage);
+  await sendListMenu(
+    phone,
+    `Please select *Brand / Type* for ${product.title}:`,
+    'Select Brand',
+    [{
+      title: product.title,
+      rows: product.brands,
+    }]
+  );
 };
 
 // Step 3b: Sheet Type Menu (only for roofing_sheets)
