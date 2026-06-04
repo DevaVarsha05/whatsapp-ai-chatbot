@@ -1,5 +1,5 @@
 const Lead = require('../models/lead');
-const { sendText } = require('../utils/whatsapp');
+const { sendText, sendButtons } = require('../utils/whatsapp');
 const { sendThicknessMenu, sendSheetTypeMenu, PRODUCTS } = require('./stage2');
 
 // Valid Pincodes
@@ -120,6 +120,18 @@ Our team will call you within *2 business hours*. 🤝
   `.trim();
 
   await sendText(phone, summary);
+
+ await sendButtons(
+    phone,
+    'Would you like to explore more products?',
+    [
+      { id: 'uc_view_products', title: 'Yes' },
+      { id: 'uc_no_thanks',     title: 'No Thanks' },
+    ]
+  );
+
+  lead.currentStage = 'use_case_action';
+  await lead.save();
 };
 
 // ── Main Handler ──────────────────────────────────────────────────
