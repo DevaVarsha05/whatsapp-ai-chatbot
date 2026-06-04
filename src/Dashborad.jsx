@@ -1,1 +1,0 @@
-const API_URL = "https://whatsapp-ai-chatbot-w5cx.onrender.com/api/leads";
