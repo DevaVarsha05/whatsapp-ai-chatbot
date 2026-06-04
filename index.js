@@ -7,7 +7,7 @@ const webhookRouter = require('./routes/webhook');
 const leadsRouter = require('./routes/leads');
 const app = express();
 
-app.use(cors({origin: 'https://whatsapp-ai-chatbot-sigma.vercel.app/'}));
+app.use(cors({origin: 'https://whatsapp-ai-chatbot-sigma.vercel.app'}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
