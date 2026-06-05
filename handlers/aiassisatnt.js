@@ -85,8 +85,8 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
       phone,
       name:    userMessage,
       product: lead.aiOrderProduct,
-      brand:   lead.aiOrderBrand,
-      size:    lead.aiOrderSize,
+      // brand:   lead.aiOrderBrand,
+      // size:    lead.aiOrderSize,
       pincode: lead.aiOrderPincode,
       source:  'text',
     });
