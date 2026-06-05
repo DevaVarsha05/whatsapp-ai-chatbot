@@ -1,5 +1,6 @@
-const { sendText } = require('../utils/whatsapp');
-
+const { sendText, sendButtons } = require('../utils/whatsapp');
+const Lead  = require('../models/lead');
+const Order = require('../models/order');
 
 
 const SYSTEM_PROMPT = `You are a sales assistant for Shree SivaBalaaji Steels, a building materials store in Tamil Nadu.
@@ -19,7 +20,7 @@ RULES — follow strictly, no exceptions:
 5. Never repeat the customer's question. Answer directly only.
 6. Keep replies under 4 lines.
 7. Reply only in English language.
-
+8. If the customer asks about a product we have, always end your reply with exactly: "PRODUCT_MATCH"
 
 
 PRODUCT CATALOG :
@@ -49,8 +50,88 @@ USE CASES:
 - Commercial: Shop Extensions, Transit Shelters, Security Cabins, Walkways
 - Industrial: Car Parking, Cattle Shed, Poultry Farms, Godown`;
 
+const handleAIOrderFlow = async (phone, userMessage, lead) => {
+  const step = lead.aiOrderStep;
+
+  if (step === 'product') {
+    lead.aiOrderProduct = userMessage;
+    lead.aiOrderStep    = 'brand';
+    await lead.save();
+    await sendText(phone, `Which brand would you like?\n(Type the brand name)`);
+    return;
+  }
+
+  if (step === 'brand') {
+    lead.aiOrderBrand = userMessage;
+    lead.aiOrderStep  = 'size';
+    await lead.save();
+    await sendText(phone, `Which size/thickness do you need?\n(Type the size)`);
+    return;
+  }
+
+  if (step === 'size') {
+    lead.aiOrderSize = userMessage;
+    lead.aiOrderStep = 'pincode';
+    await lead.save();
+    await sendText(phone, `📍 Enter your delivery *Pincode*:`);
+    return;
+  }
+
+  if (step === 'pincode') {
+    lead.aiOrderPincode = userMessage;
+    lead.aiOrderStep    = 'name';
+    await lead.save();
+    await sendText(phone, `👤 Your *Name* please:`);
+    return;
+  }
+
+  if (step === 'name') {
+    lead.aiOrderName  = userMessage;
+    lead.aiOrderStep  = null;
+    lead.currentStage = 'main_category';
+    await lead.save();
+
+    // Save Order
+    await Order.create({
+      phone,
+      name:    userMessage,
+      product: lead.aiOrderProduct,
+      brand:   lead.aiOrderBrand,
+      size:    lead.aiOrderSize,
+      pincode: lead.aiOrderPincode,
+      source:  'text',
+    });
+
+    // Send Summary
+    const summary = `✅ *Order Request Received!*
+
+📋 *Summary:*
+- Name    : ${userMessage}
+- Product : ${lead.aiOrderProduct}
+- Brand   : ${lead.aiOrderBrand}
+- Size    : ${lead.aiOrderSize}
+- Pincode : ${lead.aiOrderPincode}
+
+Our team will contact you within *2 business hours*. 🤝`;
+
+    await sendText(phone, summary);
+    return;
+  }
+};
+
+
 const handleAIMessage = async (phone, userMessage, conversationHistory = []) => {
   try {
+    
+    const lead = await Lead.findOne({ phone });
+
+    // If in AI order flow
+    if (lead?.aiOrderStep) {
+      await handleAIOrderFlow(phone, userMessage, lead);
+      return;
+    }
+    
+    
     const messages = [
       ...conversationHistory.slice(-6).map(m => ({
         role: m.role,
@@ -77,13 +158,32 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
      const data = await response.json();
     console.log('🤖 Groq Response:', JSON.stringify(data));
 
-    const reply = data?.choices?.[0]?.message?.content;
+    let reply = data?.choices?.[0]?.message?.content;
+    if (!reply) return;
 
-    if (reply) {
-      await sendText(phone, reply);
-      return { role: 'assistant', content: reply };
+    // Check if product match
+    const isProductMatch = reply.includes('PRODUCT_MATCH');
+    reply = reply.replace('PRODUCT_MATCH', '').trim();
+
+    await sendText(phone, reply);
+
+    // If product match → ask to order
+    if (isProductMatch && lead) {
+      await sendButtons(
+        phone,
+        'Would you like to place an order?',
+        [
+          { id: 'ai_order_yes', title: 'Yes, Order' },
+          { id: 'ai_order_no',  title: 'No Thanks' },
+        ]
+      );
+      lead.currentStage = 'ai_order_confirm';
+      await lead.save();
     }
-  } catch (err) {
+
+    return { role: 'assistant', content: reply };
+
+  }catch (err) {
     console.error('❌ AI Assistant error:', err.message);
     await sendText(phone, 'Sorry, something went wrong. Type *hi* to start again!');
   }
