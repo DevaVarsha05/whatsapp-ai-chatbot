@@ -7,13 +7,19 @@ const SYSTEM_PROMPT = `You are a sales assistant for Shree SivaBalaaji Steels, a
 RULES — follow strictly, no exceptions:
 
 1. PRODUCT AVAILABLE → confirm it and mention the types/sizes available. Keep it short.
+
 2. PRODUCT NOT AVAILABLE → say exactly: "Sorry, that product is not available with us."
-3. PRICE question → say: "For pricing, please contact us directly:\n📞 XXXXXXXXXX\nWe'll give you the best rate!"
+   Do NOT say "type hi" or suggest anything else.
+
+3. PRICE question → say: "For pricing, please contact us directly:
+   📞 XXXXXXXXXX
+   We'll give you the best rate!"
+
 4. UNRELATED question → say exactly: "I can only help with questions about our products. For anything else, please contact us at 📞 XXXXXXXXXX"
 5. Never repeat the customer's question. Answer directly only.
 6. Keep replies under 4 lines.
 7. Reply only in English language.
-8. If the customer's question is related to ANY product in our catalog (roofing sheets, profile sheet, crimp sheet, arch sheet, plain sheet, roofing accessories, l corner, gutter, ridge, l flashing, down pipe, barge cap, fibre cement boards, TMT bars, steel pipes, cement, fasteners, tata screws, louvers, roof ventilators, mugappu, thoovanam, or any use case like residential, commercial, industrial), end your reply with exactly: "PRODUCT_MATCH". If unrelated, do NOT add PRODUCT_MATCH.
+8. If the customer asks about a product we have, always end your reply with exactly this line: "PRODUCT_MATCH"
 
 PRODUCT CATALOG:
 ROOFING PRODUCTS:
@@ -21,6 +27,7 @@ ROOFING PRODUCTS:
   Types: Profile Sheet, Crimp Sheet, Arch Sheet, Profile Ridge Sheet, Plain Sheet
   Thickness: 0.35mm, 0.40mm, 0.45mm, 0.47mm, 0.50mm, 0.60mm
 - Roofing Accessories (JSW): L Corner, Gutter, Ridge, L Flashing, Down Pipe, Barge Cap
+  Thickness: 0.35mm to 0.60mm
 - Fibre Cement Boards (Everest): Standard Board, HD Board | Thickness: 6mm, 8mm, 10mm
 
 STRUCTURAL & FASTENING:
@@ -31,14 +38,23 @@ STRUCTURAL & FASTENING:
 
 USE CASES: Residential, Commercial, Industrial`;
 
+// ── AI Order Flow Steps ───────────────────────────────────────────
 const handleAIOrderFlow = async (phone, userMessage, lead) => {
   const step = lead.aiOrderStep;
+
+  if (step === 'product') {
+    lead.aiOrderProduct = userMessage;
+    lead.aiOrderStep    = 'brand';
+    await lead.save();
+    await sendText(phone, `Which brand would you like?\n(Type the brand name)`);
+    return;
+  }
 
   if (step === 'brand') {
     lead.aiOrderBrand = userMessage;
     lead.aiOrderStep  = 'size';
     await lead.save();
-    await sendText(phone, `Which size/thickness do you need?`);
+    await sendText(phone, `Which size/thickness do you need?\n(Type the size)`);
     return;
   }
 
@@ -61,9 +77,10 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
   if (step === 'name') {
     lead.aiOrderName  = userMessage;
     lead.aiOrderStep  = null;
-    lead.currentStage = 'completed';
+    lead.currentStage = 'main_category';
     await lead.save();
 
+    // Save Order
     await Order.create({
       phone,
       name:    userMessage,
@@ -74,6 +91,7 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
       source:  'text',
     });
 
+    // Send Summary
     const summary = `✅ *Order Request Received!*
 
 📋 *Summary:*
@@ -90,15 +108,18 @@ Our team will contact you within *2 business hours*. 🤝`;
   }
 };
 
+// ── Main AI Handler ───────────────────────────────────────────────
 const handleAIMessage = async (phone, userMessage, conversationHistory = []) => {
   try {
     const lead = await Lead.findOne({ phone });
 
+    // If in AI order flow
     if (lead?.aiOrderStep) {
       await handleAIOrderFlow(phone, userMessage, lead);
       return;
     }
 
+    // Normal AI reply
     const messages = [
       ...conversationHistory.slice(-6).map(m => ({
         role: m.role,
@@ -129,11 +150,13 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
     let reply = data?.choices?.[0]?.message?.content;
     if (!reply) return;
 
+    // Check if product match
     const isProductMatch = reply.includes('PRODUCT_MATCH');
     reply = reply.replace('PRODUCT_MATCH', '').trim();
 
     await sendText(phone, reply);
 
+    // If product match → ask to order
     if (isProductMatch && lead) {
       await sendButtons(
         phone,
@@ -143,8 +166,7 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
           { id: 'ai_order_no',  title: 'No Thanks' },
         ]
       );
-      lead.aiOrderProduct = userMessage;
-      lead.currentStage   = 'ai_order_confirm';
+      lead.currentStage = 'ai_order_confirm';
       await lead.save();
     }
 
