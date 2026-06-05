@@ -69,13 +69,29 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
     return;
   }
 
-  if (step === 'size') {
-    lead.aiOrderSize = userMessage;
-    lead.aiOrderStep = 'pincode';
-    await lead.save();
-    await sendText(phone, `📍 Enter your delivery *Pincode*:`);
+  if (step === 'brand') {
+  const validBrands = [
+    'jsw everglow', 'jsw colouron', 'jsw pragati', 'jsw silveron',
+    'jsw vishwas', 'jsw colorvista', 'l corner', 'gutter', 'ridge',
+    'l flashing', 'down pipe', 'barge cap', 'everest standard',
+    'everest hd', 'ars550d', 'ms pipes', 'gp pipes', 'dalmia',
+    'tata screws', 'louvers', 'roof ventilators', 'thoovanam', 'mugappu'
+  ];
+
+  const input = userMessage.toLowerCase();
+  const isValid = validBrands.some(b => input.includes(b));
+
+  if (!isValid) {
+    await sendText(phone, `⚠️ Please select a valid brand from the list above.`);
     return;
   }
+
+  lead.aiOrderBrand = userMessage;
+  lead.aiOrderStep  = 'size';
+  await lead.save();
+  await sendText(phone, `Which size/thickness do you need?`);
+  return;
+}
 
   if (step === 'pincode') {
     lead.aiOrderPincode = userMessage;

@@ -106,16 +106,36 @@ if (lead.currentStage === 'ai_order_confirm') {
   if (!buttonId) return;
 
   if (buttonId === 'ai_order_yes') {
-    lead.aiOrderStep  = 'product';
-    lead.currentStage = 'ai_order_flow';
-    await lead.save();
-    await sendText(phone, 'Which product are you interested in?');
-  } else if (buttonId === 'ai_order_no') {
-    lead.currentStage = 'main_category';
-    await lead.save();
-    await sendText(phone, 'No problem! Feel free to ask anything. 😊');
+    lead.aiOrderStep  = 'brand';  // product step skip — already known
+  lead.currentStage = 'ai_order_flow';
+  await lead.save();
+
+  // Product-க்கு available brands காட்டு
+  const productBrands = {
+    'roofing sheets': 'JSW Everglow, JSW Colouron+, JSW Pragati+, JSW Silveron+, JSW Vishwas+, JSW ColorVista',
+    'roofing accessories': 'JSW L Corner, Gutter, Ridge, L Flashing, Down Pipe, Barge Cap',
+    'fibre cement boards': 'Everest Standard Board, Everest HD Board',
+    'tmt bars': 'ARS550D',
+    'steel pipes': 'MS Pipes, GP Pipes',
+    'cement': 'Dalmia Cement',
+    'fasteners': 'TATA Screws, Louvers, Roof Ventilators, Thoovanam, Mugappu',
+  };
+
+  const productKey = lead.aiOrderProduct?.toLowerCase();
+  let brandList = null;
+  for (const key in productBrands) {
+    if (productKey?.includes(key)) {
+      brandList = productBrands[key];
+      break;
+    }
   }
-  return;
+
+  const brandMsg = brandList
+    ? `Available brands:\n${brandList}\n\nWhich brand would you like?`
+    : `Which brand would you like?`;
+
+  await sendText(phone, brandMsg);
+}
 }
 
 // ── AI ORDER FLOW ─────────────────────────────────────────────────
