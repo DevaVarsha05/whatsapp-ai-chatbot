@@ -77,6 +77,47 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
     'everest hd', 'ars550d', 'ms pipes', 'gp pipes', 'dalmia',
     'tata screws', 'louvers', 'roof ventilators', 'thoovanam', 'mugappu'
   ];
+  if (step === 'size') {
+  const sizeGuide = {
+    'roofing': '0.35mm, 0.40mm, 0.45mm, 0.47mm, 0.50mm, 0.60mm',
+    'fibre': '6mm, 8mm, 10mm',
+    'tmt': '8mm, 10mm, 12mm, 16mm, 20mm',
+    'pipe': '1mm, 1.2mm, 1.6mm, 2mm, 2.5mm, 3mm, 4mm',
+    'screw': '19mm, 25mm, 55mm',
+    'thoovanam': '6 inch, 8 inch',
+  };
+
+  const productKey = lead.aiOrderProduct?.toLowerCase();
+  let availableSizes = null;
+  for (const key in sizeGuide) {
+    if (productKey?.includes(key)) {
+      availableSizes = sizeGuide[key];
+      break;
+    }
+  }
+
+  // User "which size" மாதிரி கேட்டா — sizes காட்டு
+  const askingForSizes = ['which size', 'what size', 'available size', 'sizes available']
+    .some(q => userMessage.toLowerCase().includes(q));
+
+  if (askingForSizes) {
+    const msg = availableSizes
+      ? `Available sizes: ${availableSizes}\n\nWhich size would you like?`
+      : `Please type your required size:`;
+    await sendText(phone, msg);
+    return;
+  }
+
+  lead.aiOrderSize = userMessage;
+  lead.aiOrderStep = 'pincode';
+  await lead.save();
+  await sendText(phone, `📍 Enter your delivery *Pincode*:`);
+  return;
+}
+  
+
+  
+}
 
   const input = userMessage.toLowerCase();
   const isValid = validBrands.some(b => input.includes(b));
@@ -86,12 +127,7 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
     return;
   }
 
-  lead.aiOrderBrand = userMessage;
-  lead.aiOrderStep  = 'size';
-  await lead.save();
-  await sendText(phone, `Which size/thickness do you need?`);
-  return;
-}
+ 
 
   if (step === 'pincode') {
     lead.aiOrderPincode = userMessage;

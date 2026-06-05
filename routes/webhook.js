@@ -119,6 +119,10 @@ if (lead.currentStage === 'ai_order_confirm') {
     'steel pipes': 'MS Pipes, GP Pipes',
     'cement': 'Dalmia Cement',
     'fasteners': 'TATA Screws, Louvers, Roof Ventilators, Thoovanam, Mugappu',
+    'tmt': 'ARS550D',
+    'tmt bar': 'ARS550D',
+    'profile sheet': 'JSW Everglow, JSW Colouron+, JSW Pragati+, JSW Silveron+, JSW Vishwas+, JSW ColorVista',
+    'profile': 'JSW Everglow, JSW Colouron+, JSW Pragati+, JSW Silveron+, JSW Vishwas+, JSW ColorVista',
   };
 
   const productKey = lead.aiOrderProduct?.toLowerCase();
