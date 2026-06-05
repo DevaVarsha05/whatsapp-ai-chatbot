@@ -143,8 +143,7 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
      const data = await response.json();
     console.log('🤖 Groq Response:', JSON.stringify(data));
 
-    const reply = data?.choices?.[0]?.message?.content;
-
+    let reply = data?.choices?.[0]?.message?.content;
     if (reply) {
    const isProductMatch = reply.includes('PRODUCT_MATCH');
 reply = reply.replace('PRODUCT_MATCH', '').trim();
