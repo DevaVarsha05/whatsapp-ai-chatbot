@@ -1,5 +1,5 @@
 const { sendText } = require('../utils/whatsapp');
-
+const Lead = require('../models/lead');
 
 
 const SYSTEM_PROMPT = `You are a sales assistant for Shree SivaBalaaji Steels, a building materials store in Tamil Nadu.
@@ -19,7 +19,7 @@ RULES — follow strictly, no exceptions:
 5. Never repeat the customer's question. Answer directly only.
 6. Keep replies under 4 lines.
 7. Reply only in English language.
-
+8. If the customer asks about a product we have, always end your reply with exactly: "PRODUCT_MATCH"
 
 
 PRODUCT CATALOG :
@@ -80,9 +80,29 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
     const reply = data?.choices?.[0]?.message?.content;
 
     if (reply) {
-      await sendText(phone, reply);
-      return { role: 'assistant', content: reply };
+  const isProductMatch = reply.includes('PRODUCT_MATCH');
+  const cleanReply = reply.replace('PRODUCT_MATCH', '').trim();
+
+  await sendText(phone, cleanReply);
+
+  if (isProductMatch) {
+    const lead = await Lead.findOne({ phone });
+    if (lead) {
+      await sendButtons(
+        phone,
+        'Would you like to explore our products?',
+        [
+          { id: 'uc_view_products', title: 'Yes' },
+          { id: 'uc_no_thanks',     title: 'No Thanks' },
+        ]
+      );
+      lead.currentStage = 'use_case_action';
+      await lead.save();
     }
+  }
+
+  return { role: 'assistant', content: cleanReply };
+}
   } catch (err) {
     console.error('❌ AI Assistant error:', err.message);
     await sendText(phone, 'Sorry, something went wrong. Type *hi* to start again!');

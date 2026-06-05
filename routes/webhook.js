@@ -99,60 +99,6 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    // ── AI ORDER CONFIRM ──────────────────────────────────────────────
-if (lead.currentStage === 'ai_order_confirm') {
-  if (msgType !== 'interactive') return;
-  const buttonId = message.interactive?.button_reply?.id;
-  if (!buttonId) return;
-
-  if (buttonId === 'ai_order_yes') {
-    lead.aiOrderStep  = 'brand';  // product step skip — already known
-  lead.currentStage = 'ai_order_flow';
-  await lead.save();
-
-  // Product-க்கு available brands காட்டு
-  const productBrands = {
-    'roofing sheets': 'JSW Everglow, JSW Colouron+, JSW Pragati+, JSW Silveron+, JSW Vishwas+, JSW ColorVista',
-    'roofing accessories': 'JSW L Corner, Gutter, Ridge, L Flashing, Down Pipe, Barge Cap',
-    'fibre cement boards': 'Everest Standard Board, Everest HD Board',
-    'tmt bars': 'ARS550D',
-    'steel pipes': 'MS Pipes, GP Pipes',
-    'cement': 'Dalmia Cement',
-    'fasteners': 'TATA Screws, Louvers, Roof Ventilators, Thoovanam, Mugappu',
-    'tmt': 'ARS550D',
-    'tmt bar': 'ARS550D',
-    'profile sheet': 'JSW Everglow, JSW Colouron+, JSW Pragati+, JSW Silveron+, JSW Vishwas+, JSW ColorVista',
-    'profile': 'JSW Everglow, JSW Colouron+, JSW Pragati+, JSW Silveron+, JSW Vishwas+, JSW ColorVista',
-  };
-
-  const productKey = lead.aiOrderProduct?.toLowerCase();
-  let brandList = null;
-  for (const key in productBrands) {
-    if (productKey?.includes(key)) {
-      brandList = productBrands[key];
-      break;
-    }
-  }
-
-  const brandMsg = brandList
-    ? `Available brands:\n${brandList}\n\nWhich brand would you like?`
-    : `Which brand would you like?`;
-
-  await sendText(phone, brandMsg);
-}
-}
-
-// ── AI ORDER FLOW ─────────────────────────────────────────────────
-if (lead.currentStage === 'ai_order_flow') {
-  if (msgType === 'text') {
-    const text = message.text?.body?.trim();
-    if (text) await handleAIMessage(phone, text, lead.messages);
-  }
-  return;
-}
-    
-
-
  
     // ── USE CASE ACTION ───────────────────────────────────────────
     if (lead.currentStage === 'use_case_action') {

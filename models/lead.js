@@ -35,13 +35,7 @@ const leadSchema = new mongoose.Schema({
   catalogCompany:     String,
   catalogProjectType: String,
 
-  // AI Order flow
-aiOrderStep:    String,
-aiOrderProduct: String,
-aiOrderBrand:   String,
-aiOrderSize:    String,
-aiOrderPincode: String,
-aiOrderName:    String,
+
 
   // AI conversation history
   messages: [
