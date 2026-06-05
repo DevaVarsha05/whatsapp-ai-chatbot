@@ -97,8 +97,8 @@ const handleAIOrderFlow = async (phone, userMessage, lead) => {
 📋 *Summary:*
 - Name    : ${userMessage}
 - Product : ${lead.aiOrderProduct}
-- Brand   : ${lead.aiOrderBrand}
-- Size    : ${lead.aiOrderSize}
+// - Brand   : ${lead.aiOrderBrand}
+// - Size    : ${lead.aiOrderSize}
 - Pincode : ${lead.aiOrderPincode}
 
 Our team will contact you within *2 business hours*. 🤝`;

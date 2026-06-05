@@ -110,11 +110,11 @@ if (lead.currentStage === 'ai_order_confirm') {
   if (!buttonId) return;
 
   if (buttonId === 'ai_order_yes') {
-    lead.aiOrderStep  = 'brand';
+    lead.aiOrderStep  = 'pincode';
     lead.currentStage = 'ai_order_flow';
     await lead.save();
-    await sendText(phone, 'Which brand are you interested in?');
-  } else if (buttonId === 'ai_order_no') {
+    await sendText(phone, '📍 Enter your delivery *Pincode*:');
+} else if (buttonId === 'ai_order_no') {
     lead.currentStage = 'main_category';
     await lead.save();
     await sendText(phone, 'No problem! Feel free to ask anything. 😊');
