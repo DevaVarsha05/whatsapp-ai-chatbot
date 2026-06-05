@@ -155,10 +155,20 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
     await sendText(phone, reply);
 
     // If product match → ask to order
-    if (isProductMatch && lead) {
+   if (isProductMatch && lead) {
+      lead.aiOrderProduct = userMessage; // User anupuna product name-ah database-la save panrom
+      lead.currentStage = 'ai_order_confirm';
+      await lead.save();
+
+      // Product details-oda clear-ah text kaatrom
+      const specText = `✨ *Product Details:*
+• *Item:* ${userMessage}
+
+Would you like to place an order?`;
+
       await sendButtons(
         phone,
-        'Would you like to place an order?',
+        specText,
         [
           { id: 'ai_order_yes', title: 'Yes, Order' },
           { id: 'ai_order_no',  title: 'No Thanks' },
