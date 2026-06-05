@@ -111,7 +111,7 @@ const sendQuoteSummary = async (phone, lead) => {
 
 📋 *Quote Summary:*
 - Name      : ${lead.customerName || '-'}
-- Phone     : ${lead.customerPhone || '-'}
+
 - Product   : ${product?.title || lead.productType}
 - Brand     : ${brandName}
 ${sheetTypeLine}• Size      : ${sizeName}
@@ -127,7 +127,7 @@ Our team will call you within *2 business hours*. 🤝
     'Would you like to explore more products?',
     [
       { id: 'uc_view_products', title: 'Yes' },
-      { id: 'uc_no_thanks',     title: 'No Thanks' },
+      { id: 'uc_no_thanks',     title: 'No ' },
     ]
   );
 
@@ -150,18 +150,13 @@ const handleQuoteFormAnswer = async (phone, answer, isInteractive = false) => {
     await handleThicknessSelection(phone, answer);
   } else if (step === 'pincode' && !isInteractive) {
     await handlePincode(phone, answer);
-  } else if (step === 'customer_name' && !isInteractive) {  // ✅ add
+  } else if (step === 'customer_name' && !isInteractive) {
     lead.customerName = answer.trim();
-    lead.quoteStep    = 'customer_phone';
-    await lead.save();
-    await sendText(phone, '📞 Please enter your *Phone Number*:');
-  } else if (step === 'customer_phone' && !isInteractive) {  // ✅ add
-    lead.customerPhone = answer.trim();
-    lead.currentStage  = 'completed';
-    lead.quoteStep     = 'done';
+    lead.currentStage = 'completed';
+    lead.quoteStep    = 'done';
     await lead.save();
     await sendQuoteSummary(phone, lead);
-  }
+  } 
 };
 
 module.exports = { handleQuoteFormAnswer, sendQuoteSummary };

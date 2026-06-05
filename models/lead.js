@@ -18,8 +18,8 @@ const leadSchema = new mongoose.Schema({
   selectedSheetType: String,   // only for roofing_sheets
   selectedThickness: String,
   deliveryPincode:   String,
-  customerName:      String,   // ✅ add
-  customerPhone:     String,   // ✅ add
+  customerName:      String,   
+ 
 
   // Catalog form
   catalogProduct:     String,
