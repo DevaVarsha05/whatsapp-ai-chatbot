@@ -87,17 +87,18 @@ router.post('/', async (req, res) => {
 }
 
     // ── SUB CATEGORY ──────────────────────────────────────────────
-    if (lead.currentStage === 'sub_category') {
-      if (msgType !== 'interactive') {
-        await sendSubCategoryMenu(phone, lead.mainCategory);
-        return;
-      }
-      const listId = message.interactive?.list_reply?.id;
-     
-      if (!listId) return;
-      await handleSubCategorySelection(phone, listId);
-      return;
+   if (lead.currentStage === 'sub_category') {
+  if (msgType !== 'interactive') {
+    const text = message.text?.body?.trim();
+    if (text) {
+      lead.messages.push({ role: 'user', content: text });
+      const aiReply = await handleAIMessage(phone, text, lead.messages);
+      if (aiReply) lead.messages.push(aiReply);
+      await lead.save();
     }
+    return;
+  }
+}
 
  
     // ── USE CASE ACTION ───────────────────────────────────────────
