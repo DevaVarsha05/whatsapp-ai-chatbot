@@ -156,27 +156,21 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
 
     // If product match → ask to order
    if (isProductMatch && lead) {
-      lead.aiOrderProduct = userMessage; // User anupuna product name-ah database-la save panrom
-      lead.currentStage = 'ai_order_confirm';
-      await lead.save();
+  lead.aiOrderProduct = userMessage;
+  lead.currentStage = 'ai_order_confirm';  // ✅ முதல்ல
+  await lead.save();                        // ✅ save
 
-      // Product details-oda clear-ah text kaatrom
-      const specText = `✨ *Product Details:*
-• *Item:* ${userMessage}
+  const specText = `✨ *Product Details:*\n• *Item:* ${userMessage}\n\nWould you like to place an order?`;
 
-Would you like to place an order?`;
-
-      await sendButtons(
-        phone,
-        specText,
-        [
-          { id: 'ai_order_yes', title: 'Yes, Order' },
-          { id: 'ai_order_no',  title: 'No Thanks' },
-        ]
-      );
-      lead.currentStage = 'ai_order_confirm';
-      await lead.save();
-    }
+  await sendButtons(                        // ✅ கடைசியில்
+    phone,
+    specText,
+    [
+      { id: 'ai_order_yes', title: '✅ Yes, Order' },
+      { id: 'ai_order_no',  title: '❌ No Thanks' },
+    ]
+  );
+}
 
     return { role: 'assistant', content: reply };
 
