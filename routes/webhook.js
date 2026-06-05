@@ -103,7 +103,33 @@ router.post('/', async (req, res) => {
   await handleSubCategorySelection(phone, listId);
   return;
 }
+   // ── AI ORDER CONFIRM ──────────────────────────────────────────────
+if (lead.currentStage === 'ai_order_confirm') {
+  if (msgType !== 'interactive') return;
+  const buttonId = message.interactive?.button_reply?.id;
+  if (!buttonId) return;
 
+  if (buttonId === 'ai_order_yes') {
+    lead.aiOrderStep  = 'brand';
+    lead.currentStage = 'ai_order_flow';
+    await lead.save();
+    await sendText(phone, 'Which brand are you interested in?');
+  } else if (buttonId === 'ai_order_no') {
+    lead.currentStage = 'main_category';
+    await lead.save();
+    await sendText(phone, 'No problem! Feel free to ask anything. 😊');
+  }
+  return;
+}
+
+// ── AI ORDER FLOW ─────────────────────────────────────────────────
+if (lead.currentStage === 'ai_order_flow') {
+  if (msgType === 'text') {
+    const text = message.text?.body?.trim();
+    if (text) await handleAIMessage(phone, text, lead.messages);
+  }
+  return;
+}
  
     // ── USE CASE ACTION ───────────────────────────────────────────
     if (lead.currentStage === 'use_case_action') {

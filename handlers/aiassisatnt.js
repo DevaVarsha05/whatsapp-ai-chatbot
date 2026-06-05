@@ -1,6 +1,6 @@
 const { sendText, sendButtons } = require('../utils/whatsapp');
 const Lead = require('../models/lead');
-
+const Order = require('../models/order');
 
 const SYSTEM_PROMPT = `You are a sales assistant for Shree SivaBalaaji Steels, a building materials store in Tamil Nadu.
 
@@ -49,8 +49,74 @@ USE CASES:
 - Commercial: Shop Extensions, Transit Shelters, Security Cabins, Walkways
 - Industrial: Car Parking, Cattle Shed, Poultry Farms, Godown`;
 
+const handleAIOrderFlow = async (phone, userMessage, lead) => {
+  const step = lead.aiOrderStep;
+
+  if (step === 'brand') {
+    lead.aiOrderBrand = userMessage;
+    lead.aiOrderStep  = 'size';
+    await lead.save();
+    await sendText(phone, `Which size/thickness do you need?\n(Type the size)`);
+    return;
+  }
+
+  if (step === 'size') {
+    lead.aiOrderSize = userMessage;
+    lead.aiOrderStep = 'pincode';
+    await lead.save();
+    await sendText(phone, `📍 Enter your delivery *Pincode*:`);
+    return;
+  }
+
+  if (step === 'pincode') {
+    lead.aiOrderPincode = userMessage;
+    lead.aiOrderStep    = 'name';
+    await lead.save();
+    await sendText(phone, `👤 Your *Name* please:`);
+    return;
+  }
+
+  if (step === 'name') {
+    lead.aiOrderName  = userMessage;
+    lead.aiOrderStep  = null;
+    lead.currentStage = 'main_category';
+    await lead.save();
+
+    await Order.create({
+      phone,
+      name:    userMessage,
+      product: lead.aiOrderProduct,
+      brand:   lead.aiOrderBrand,
+      size:    lead.aiOrderSize,
+      pincode: lead.aiOrderPincode,
+      source:  'text',
+    });
+
+    const summary = `✅ *Order Request Received!*
+
+📋 *Summary:*
+- Name    : ${userMessage}
+- Product : ${lead.aiOrderProduct}
+- Brand   : ${lead.aiOrderBrand}
+- Size    : ${lead.aiOrderSize}
+- Pincode : ${lead.aiOrderPincode}
+
+Our team will contact you within *2 business hours*. 🤝`;
+
+    await sendText(phone, summary);
+    return;
+  }
+};
+
 const handleAIMessage = async (phone, userMessage, conversationHistory = []) => {
   try {
+    const lead = await Lead.findOne({ phone });
+
+    // AI order flow-ல் இருந்தா
+    if (lead?.aiOrderStep) {
+      await handleAIOrderFlow(phone, userMessage, lead);
+      return;
+    }
     const messages = [
       ...conversationHistory.slice(-6).map(m => ({
         role: m.role,
@@ -80,26 +146,24 @@ const handleAIMessage = async (phone, userMessage, conversationHistory = []) => 
     const reply = data?.choices?.[0]?.message?.content;
 
     if (reply) {
-  const isProductMatch = reply.includes('PRODUCT_MATCH');
-  const cleanReply = reply.replace('PRODUCT_MATCH', '').trim();
+   const isProductMatch = reply.includes('PRODUCT_MATCH');
+reply = reply.replace('PRODUCT_MATCH', '').trim();
 
-  await sendText(phone, cleanReply);
+await sendText(phone, reply);
 
-  if (isProductMatch) {
-    const lead = await Lead.findOne({ phone });
-    if (lead) {
-      await sendButtons(
-        phone,
-        'Would you like to explore our products?',
-        [
-          { id: 'uc_view_products', title: 'Yes' },
-          { id: 'uc_no_thanks',     title: 'No Thanks' },
-        ]
-      );
-      lead.currentStage = 'use_case_action';
-      await lead.save();
-    }
-  }
+if (isProductMatch && lead) {
+  await sendButtons(
+    phone,
+    'Would you like to place an order?',
+    [
+      { id: 'ai_order_yes', title: 'Yes, Order' },
+      { id: 'ai_order_no',  title: 'No Thanks' },
+    ]
+  );
+  lead.aiOrderProduct = userMessage;
+  lead.currentStage   = 'ai_order_confirm';
+  await lead.save();
+}
 
   return { role: 'assistant', content: cleanReply };
 }
