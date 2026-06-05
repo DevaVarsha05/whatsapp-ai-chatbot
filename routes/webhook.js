@@ -87,7 +87,7 @@ router.post('/', async (req, res) => {
 }
 
     // ── SUB CATEGORY ──────────────────────────────────────────────
-   if (lead.currentStage === 'sub_category') {
+ if (lead.currentStage === 'sub_category') {
   if (msgType !== 'interactive') {
     const text = message.text?.body?.trim();
     if (text) {
@@ -98,6 +98,10 @@ router.post('/', async (req, res) => {
     }
     return;
   }
+  const listId = message.interactive?.list_reply?.id;
+  if (!listId) return;
+  await handleSubCategorySelection(phone, listId);
+  return;
 }
 
  
