@@ -218,7 +218,7 @@ export default function Dashboard() {
                       <td style={{ ...s.td, color: "#f9fafb", fontWeight: 600 }}>
                         {lead.customerName || "-"}
                       </td>
-                      <td style={s.td}>{lead.customerPhone || lead.phone}</td>
+                      <td style={s.td}>{lead.phone}</td>
                       <td style={s.td}>{PRODUCT_LABELS[lead.productType] || lead.productType || "-"}</td>
                       <td style={s.td}>{BRAND_LABELS[lead.selectedBrand] || lead.selectedBrand || "-"}</td>
                       <td style={s.td}>{SHEET_TYPE_LABELS[lead.selectedSheetType] || lead.selectedSheetType || "-"}</td>
@@ -230,7 +230,7 @@ export default function Dashboard() {
                           {lead.currentStage}
                         </span>
                       </td>
-                      <td style={s.td}>{formatDate(lead.createdAt)}</td>
+                      <td style={s.td}>{formatDate(lead.updatedAt)}</td>
                     </tr>
                   );
                 })
